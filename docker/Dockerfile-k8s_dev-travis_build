@@ -1,0 +1,30 @@
+FROM maven:3 AS builder_image
+
+WORKDIR /app
+
+COPY pom.xml ./
+COPY src ./src/
+
+RUN mvn package
+
+FROM openjdk:11
+MAINTAINER "János Gats <gatsjanos@gmail.com>"
+
+ENV APP_HOME=/home/spring-user/app
+ENV LOGGING_ENABLE_LOCALDEV_CONSOLE_APPENDER=true
+
+RUN groupadd -g 10002 spring-user && \
+    useradd -m -u 10002 -g spring-user spring-user
+
+WORKDIR ${APP_HOME}
+
+HEALTHCHECK --interval=15s \
+            --retries=3 \
+            --start-period=1m \
+            --timeout=5s \
+            CMD curl --fail http://localhost:4200 || exit 1
+
+CMD ["java", "-jar", "-Dspring.profiles.active=k8s_dev", "laboschcst.filehost.jar"]
+
+COPY --from=builder_image --chown=spring-user:spring-user /app/target/laboschcst.filehost.jar ${APP_HOME}/laboschcst.filehost.jar
+USER spring-user

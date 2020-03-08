@@ -1,0 +1,24 @@
+FROM openjdk:11
+MAINTAINER "János Gats <gatsjanos@gmail.com>"
+
+ENV APP_HOME=/home/spring-user/app
+ENV LOGGING_ENABLE_LOCALDEV_CONSOLE_APPENDER=true
+
+RUN groupadd -g 10002 spring-user && \
+    useradd -m -u 10002 -g spring-user spring-user
+
+WORKDIR ${APP_HOME}
+
+HEALTHCHECK --interval=15s \
+            --retries=3 \
+            --start-period=1m \
+            --timeout=5s \
+            CMD curl --fail http://localhost:4200 || exit 1
+
+EXPOSE 30006
+EXPOSE 4200
+CMD ["java", "-jar", "-Dspring.profiles.active=k8s_dev",  "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:30006", "laboschcst.filehost.jar"]
+
+COPY --chown=spring-user:spring-user target/laboschcst.filehost.jar ${APP_HOME}/laboschcst.filehost.jar
+
+USER spring-user

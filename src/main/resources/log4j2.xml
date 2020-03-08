@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- LoggerConfig -->
+<Configuration name="com.laboschcst.filehost" packages="com.laboschcst.filehost.logging">
+    <Appenders>
+
+        <LocaldevConsoleAppender name="LocaldevConsoleAppender">
+        </LocaldevConsoleAppender>
+        <Async name="AsyncLocaldevConsoleAppender" bufferSize="16384">
+            <AppenderRef ref="LocaldevConsoleAppender"/>
+        </Async>
+
+<!--        <AwsCloudWatchConsoleAppender name="AwsCloudWatchConsoleAppender">-->
+<!--        </AwsCloudWatchConsoleAppender>-->
+<!--        <Async name="AsyncAwsCloudWatchConsoleAppender" bufferSize="16384">-->
+<!--            <AppenderRef ref="AwsCloudWatchConsoleAppender"/>-->
+<!--        </Async>-->
+
+<!--        <SplunkFileAppender name="SplunkFileAppender">-->
+<!--        </SplunkFileAppender>-->
+<!--        <Async name="AsyncSplunkFileAppender" bufferSize="16384">-->
+<!--            <AppenderRef ref="SplunkFileAppender"/>-->
+<!--        </Async>-->
+
+    </Appenders>
+    <Loggers>
+        <Logger name="org.hibernate.SQL" level="info" additivity="false">
+            <AppenderRef ref="AsyncLocaldevConsoleAppender"/>
+        </Logger>
+        <Logger name="org.springframework.security.web.FilterChainProxy" level="info" additivity="false">
+            <AppenderRef ref="AsyncLocaldevConsoleAppender"/>
+        </Logger>
+        <Logger name="org.springframework.security.web" level="info" additivity="false">
+            <AppenderRef ref="AsyncLocaldevConsoleAppender"/>
+        </Logger>
+        <Logger name="com.laboschcst.filehost" level="all" additivity="false">
+            <AppenderRef ref="AsyncLocaldevConsoleAppender"/>
+        </Logger>
+        <Root level="info">
+            <AppenderRef ref="AsyncLocaldevConsoleAppender"/>
+<!--            <AppenderRef ref="AsyncAwsCloudWatchConsoleAppender"/>-->
+<!--            <AppenderRef ref="AsyncSplunkFileAppender"/>-->
+        </Root>
+    </Loggers>
+</Configuration>
