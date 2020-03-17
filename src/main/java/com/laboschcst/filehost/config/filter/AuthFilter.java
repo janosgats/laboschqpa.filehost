@@ -1,7 +1,11 @@
 package com.laboschcst.filehost.config.filter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.laboschcst.filehost.api.dto.InternalResourceDto;
+import com.laboschcst.filehost.api.dto.IsUserAuthorizedToResourceResponseDto;
+import com.laboschcst.filehost.api.dto.StoredFileDto;
 import com.laboschcst.filehost.exceptions.UnAuthorizedException;
 import com.laboschcst.filehost.service.apiclient.CsillagturaServerApiClient;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +41,8 @@ public class AuthFilter implements Filter {
             chain.doFilter(request, response);
         } else {
             try {
+                StoredFileDto storedFileDto = null;
+
                 String authInterServiceHeader = httpServletRequest.getHeader("AuthInterService");
                 if (authInterServiceHeader != null && !authInterServiceHeader.isBlank()) {
                     //Authorizing call between services
@@ -45,14 +51,19 @@ public class AuthFilter implements Filter {
                 } else {
                     //Authorizing call from a user
                     Cookie sessionCookie = getSessionCookie(httpServletRequest);
-                    String resourceId = getRequestedResourceId(httpServletRequest);
+                    Long requestedStoredFileId = getRequestedStoredFileId(httpServletRequest);
 
-                    if (!csillagturaServerApiClient.getIfUserIsAuthorizedToResource(sessionCookie.getValue(), resourceId))
-                        throw new UnAuthorizedException("User of the sent Session is unauthorized for the requested resource: " + resourceId);
+                    InternalResourceDto requestedInternalResourceDto = InternalResourceDto.builder().storedFileId(requestedStoredFileId).build();
+                    IsUserAuthorizedToResourceResponseDto responseDto = csillagturaServerApiClient.getIsAuthorizedToResource(sessionCookie.getValue(), requestedInternalResourceDto);
+
+                    if (!responseDto.isAuthorized())
+                        throw new UnAuthorizedException("User of the sent Session is unauthorized for the requested resource: " + requestedStoredFileId);
+
+                    storedFileDto = responseDto.getStoredFileDto();
                 }
 
                 logger.trace("AuthFilter auth is valid.");
-                chain.doFilter(request, response);
+                chain.doFilter(new StoredFileServletRequestWrapper(httpServletRequest, storedFileDto), response);
             } catch (UnAuthorizedException e) {
                 logger.trace("Request is unauthorized in AuthFilter: " + e.getMessage());
                 writeErrorResponseBody((HttpServletResponse) response, "Unauthorized: " + e.getMessage(), HttpStatus.FORBIDDEN);
@@ -64,17 +75,17 @@ public class AuthFilter implements Filter {
         }
     }
 
-    private String getRequestedResourceId(HttpServletRequest httpServletRequest) {
-        String[] resourceIdParams = httpServletRequest.getParameterValues("resourceId");
+    private Long getRequestedStoredFileId(HttpServletRequest httpServletRequest) {
+        String[] resourceIdParams = httpServletRequest.getParameterValues("storedFileId");
         if (resourceIdParams == null)
-            throw new UnAuthorizedException("No resourceId parameter is present.");
+            throw new UnAuthorizedException("No storedFileId parameter is present.");
 
         if (resourceIdParams.length > 1)
-            throw new UnAuthorizedException("Multi value is not allowed for resourceId parameter.");
+            throw new UnAuthorizedException("Multi value is not allowed for storedFileId parameter.");
         else if (resourceIdParams.length == 0)
-            throw new UnAuthorizedException("No resourceId parameter is present.");
+            throw new UnAuthorizedException("No storedFileId parameter is present.");
 
-        return resourceIdParams[0];
+        return Long.parseLong(resourceIdParams[0]);
     }
 
     private Cookie getSessionCookie(HttpServletRequest httpServletRequest) {

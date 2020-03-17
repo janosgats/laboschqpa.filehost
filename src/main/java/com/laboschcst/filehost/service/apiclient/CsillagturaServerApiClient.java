@@ -1,5 +1,8 @@
 package com.laboschcst.filehost.service.apiclient;
 
+import com.laboschcst.filehost.api.dto.InternalResourceDto;
+import com.laboschcst.filehost.api.dto.IsUserAuthorizedToResourceResponseDto;
+
 public interface CsillagturaServerApiClient {
-    boolean getIfUserIsAuthorizedToResource(String sessionCookieValue, String resourceId);
+    IsUserAuthorizedToResourceResponseDto getIsAuthorizedToResource(String sessionCookieValue, InternalResourceDto internalResourceDto);
 }

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.laboschcst.filehost.exceptions.ApiClientException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -27,23 +28,34 @@ public abstract class AbstractApiClient {
 
     protected abstract WebClient getWebClient();
 
-    protected String doCallAndThrowExceptionIfStatuscodeIsNot2xx(String uriPath, HttpMethod httpMethod) {
-        return doCallAndThrowExceptionIfStatuscodeIsNot2xx(uriPath, httpMethod, null, null, null);
+    protected <T> T doCallAndThrowExceptionIfStatuscodeIsNot2xx(Class<T> responseBodyClass, String uriPath, HttpMethod httpMethod) {
+        return doCallAndThrowExceptionIfStatuscodeIsNot2xx(responseBodyClass, uriPath, httpMethod, null, null);
     }
 
-    protected String doCallAndThrowExceptionIfStatuscodeIsNot2xx(String uriPath, HttpMethod httpMethod, Map<String, String> queryParams) {
-        return doCallAndThrowExceptionIfStatuscodeIsNot2xx(uriPath, httpMethod, queryParams, null, null);
+    protected <T> T doCallAndThrowExceptionIfStatuscodeIsNot2xx(Class<T> responseBodyClass, String uriPath, HttpMethod httpMethod, Map<String, String> queryParams) {
+        return doCallAndThrowExceptionIfStatuscodeIsNot2xx(responseBodyClass, uriPath, httpMethod, queryParams, null);
     }
 
-    protected String doCallAndThrowExceptionIfStatuscodeIsNot2xx(String uriPath, HttpMethod httpMethod, JsonNode requestBody) {
-        return doCallAndThrowExceptionIfStatuscodeIsNot2xx(uriPath, httpMethod, null, requestBody, null);
+    protected <T> T doCallAndThrowExceptionIfStatuscodeIsNot2xx(Class<T> responseBodyClass, String uriPath, HttpMethod httpMethod, JsonNode requestBody) {
+        return doCallAndThrowExceptionIfStatuscodeIsNot2xx(responseBodyClass, uriPath, httpMethod, null, requestBody);
     }
 
-    protected String doCallAndThrowExceptionIfStatuscodeIsNot2xx(String uriPath, HttpMethod httpMethod, Map<String, String> queryParams, JsonNode requestBody) {
-        return doCallAndThrowExceptionIfStatuscodeIsNot2xx(uriPath, httpMethod, null, requestBody, null);
+    protected <T> T doCallAndThrowExceptionIfStatuscodeIsNot2xx(Class<T> responseBodyClass, String uriPath, HttpMethod httpMethod, Map<String, String> queryParams, JsonNode requestBody) {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        String requestBodyString = "";
+
+        if (requestBody != null) {
+            requestBodyString = requestBody.toString();
+            httpHeaders.add("Content-Type", "application/json");
+        }
+
+        return doCallAndThrowExceptionIfStatuscodeIsNot2xx(responseBodyClass, uriPath, httpMethod, queryParams, requestBodyString, httpHeaders, null);
     }
 
-    protected String doCallAndThrowExceptionIfStatuscodeIsNot2xx(String uriPath, HttpMethod httpMethod, Map<String, String> queryParams, JsonNode requestBody, MultiValueMap<String, String> cookies) {
+    protected <T> T doCallAndThrowExceptionIfStatuscodeIsNot2xx(Class<T> responseBodyClass, String uriPath, HttpMethod httpMethod, Map<String, String> queryParams, String requestBody, HttpHeaders headers, MultiValueMap<String, String> cookies) {
+        if (requestBody == null)
+            requestBody = "";
+
         String queryString = "";
         if (queryParams != null) {
             queryString = queryParams.keySet().stream()
@@ -51,56 +63,53 @@ public abstract class AbstractApiClient {
                     .collect(Collectors.joining("&"));
         }
 
-        String fullUri = getApiBaseUrl() + uriPath + "?" + queryString;
-
-        HashMap<String, String> headers = new HashMap<>();
-        String requestBodyString = "";
-        if (requestBody != null) {
-            requestBodyString = requestBody.toString();
-            headers.put("Content-Type", "application/json");
-        }
+        String fullUriString = getApiBaseUrl() + uriPath + "?" + queryString;
 
         ClientResponse response = getWebClient()
                 .method(httpMethod)
-                .uri(fullUri)
+                .uri(fullUriString)
                 .cookies(requestCookies -> {
                     if (cookies != null)
                         requestCookies.addAll(cookies);
                 })
-                .body(BodyInserters.fromValue(requestBodyString))
-                .header("Content-Type", headers.get("Content-Type"))
+                .body(BodyInserters.fromValue(requestBody))
+                .headers(httpHeaders -> httpHeaders.addAll(headers))
                 .exchange()
                 .onErrorResume(e -> {
-                    logger.error("Error during communication with {}", fullUri);
+                    logger.error("Error during communication with {}", fullUriString);
                     return Mono.error(new ApiClientException(e));
                 })
                 .block();
 
         if (response.statusCode().is2xxSuccessful()) {
-            String responseBody = response.bodyToMono(String.class).block();
-            logger.debug("Rest call succeeded. Url: {{} {}}, HTTP status code: {{}}\nresponse:\n{}",
-                    httpMethod,
-                    fullUri,
-                    response.statusCode(),
-                    responseBody
-            );
-            return responseBody;
+            try {
+                T responseBody = response.bodyToMono(responseBodyClass).block();
+                logger.debug("Rest call succeeded. Url: {{} {}}, HTTP status code: {{}}\nresponse:\n{}",
+                        httpMethod,
+                        fullUriString,
+                        response.statusCode(),
+                        responseBody
+                );
+
+                return responseBody;
+            } catch (Exception e) {
+                logger.debug("Exception while getting response body. Expected body class type: {}, Url: {{} {}}, HTTP status code: {{}}",
+                        responseBodyClass.getSimpleName(),
+                        httpMethod,
+                        fullUriString,
+                        response.statusCode()
+                );
+
+                throw e;
+            }
         } else {
-            logger.error("HTTP status code from performer.webservice indicates failure. Url: {{} {}}, HTTP status code: {{}}\nresponse:\n{}",
+            logger.error("HTTP status code indicates failure. Url: {{} {}}, HTTP status code: {{}}\nresponse:\n{}",
                     httpMethod,
-                    fullUri,
+                    fullUriString,
                     response.statusCode(),
                     response.bodyToMono(String.class).block()
             );
-            throw new ApiClientException("HTTP status code from performer.webservice indicates failure", response.statusCode());
-        }
-    }
-
-    public static JsonNode convertStringToJsonNode(String str) {
-        try {
-            return objectMapper.readTree(str);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Cannot convert string to JsonNode.", e);
+            throw new ApiClientException("HTTP status code indicates failure");
         }
     }
 }

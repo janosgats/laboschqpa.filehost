@@ -15,7 +15,7 @@ public class ApiClientExceptionAspect {
     private static final Logger logger = LoggerFactory.getLogger(ApiClientExceptionAspect.class);
 
     @Around("@within(com.laboschcst.filehost.config.annotation.HandledApiClient)")
-    public Object rdbAccessAroundAdvice(ProceedingJoinPoint joinPoint) throws Throwable {
+    public Object apiClientExceptionWrapperAdvice(ProceedingJoinPoint joinPoint) throws Throwable {
         try {
             return joinPoint.proceed();
         } catch (ApiClientException | NotImplementedException e) {
