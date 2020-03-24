@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 public class StoredFileDto {
     private Long id;
     private StoredFileStatus status;
-    private String directoryPath;
+    private String path;
     private Long originalUploaderUserId;
     private Long currentUploaderUserId;
     private Long size;

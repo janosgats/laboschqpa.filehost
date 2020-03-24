@@ -7,10 +7,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 
 @Getter
-public class StoredFileServletRequestWrapper extends HttpServletRequestWrapper {
+public class StoredFileRequestWrapper extends HttpServletRequestWrapper {
     private StoredFileDto storedFileDto;
 
-    public StoredFileServletRequestWrapper(HttpServletRequest request, StoredFileDto storedFileDto) {
+    public StoredFileRequestWrapper(HttpServletRequest request, StoredFileDto storedFileDto) {
         super(request);
         this.storedFileDto = storedFileDto;
     }

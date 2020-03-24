@@ -1,5 +1,6 @@
 package com.laboschcst.filehost.api.dto;
 
+import com.laboschcst.filehost.enums.FileAccessType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,5 +12,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class InternalResourceDto {
     private Long storedFileId;
-
+    private FileAccessType fileAccessType;
 }

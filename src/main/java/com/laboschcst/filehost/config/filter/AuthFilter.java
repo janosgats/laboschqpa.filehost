@@ -1,11 +1,12 @@
 package com.laboschcst.filehost.config.filter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.laboschcst.filehost.api.dto.InternalResourceDto;
 import com.laboschcst.filehost.api.dto.IsUserAuthorizedToResourceResponseDto;
 import com.laboschcst.filehost.api.dto.StoredFileDto;
+import com.laboschcst.filehost.enums.FileAccessType;
+import com.laboschcst.filehost.exceptions.InvalidHttpRequestException;
 import com.laboschcst.filehost.exceptions.UnAuthorizedException;
 import com.laboschcst.filehost.service.apiclient.CsillagturaServerApiClient;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -53,7 +55,9 @@ public class AuthFilter implements Filter {
                     Cookie sessionCookie = getSessionCookie(httpServletRequest);
                     Long requestedStoredFileId = getRequestedStoredFileId(httpServletRequest);
 
-                    InternalResourceDto requestedInternalResourceDto = InternalResourceDto.builder().storedFileId(requestedStoredFileId).build();
+                    FileAccessType fileAccessType = getRequestedFileAccessType(httpServletRequest);
+
+                    InternalResourceDto requestedInternalResourceDto = InternalResourceDto.builder().storedFileId(requestedStoredFileId).fileAccessType(fileAccessType).build();
                     IsUserAuthorizedToResourceResponseDto responseDto = csillagturaServerApiClient.getIsAuthorizedToResource(sessionCookie.getValue(), requestedInternalResourceDto);
 
                     if (!responseDto.isAuthorized())
@@ -63,10 +67,12 @@ public class AuthFilter implements Filter {
                 }
 
                 logger.trace("AuthFilter auth is valid.");
-                chain.doFilter(new StoredFileServletRequestWrapper(httpServletRequest, storedFileDto), response);
+                chain.doFilter(new StoredFileRequestWrapper(httpServletRequest, storedFileDto), response);
             } catch (UnAuthorizedException e) {
                 logger.trace("Request is unauthorized in AuthFilter: " + e.getMessage());
                 writeErrorResponseBody((HttpServletResponse) response, "Unauthorized: " + e.getMessage(), HttpStatus.FORBIDDEN);
+            } catch (InvalidHttpRequestException e) {
+                writeErrorResponseBody((HttpServletResponse) response, "Invalid request: " + e.getMessage(), HttpStatus.BAD_REQUEST);
             } catch (Exception e) {
                 logger.debug("Exception thrown while trying to authenticate incoming request!", e);
                 writeErrorResponseBody((HttpServletResponse) response, "Exception thrown while trying to authenticate incoming request!", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -78,14 +84,29 @@ public class AuthFilter implements Filter {
     private Long getRequestedStoredFileId(HttpServletRequest httpServletRequest) {
         String[] resourceIdParams = httpServletRequest.getParameterValues("storedFileId");
         if (resourceIdParams == null)
-            throw new UnAuthorizedException("No storedFileId parameter is present.");
+            throw new InvalidHttpRequestException("No storedFileId parameter is present.");
 
         if (resourceIdParams.length > 1)
-            throw new UnAuthorizedException("Multi value is not allowed for storedFileId parameter.");
+            throw new InvalidHttpRequestException("Multi value is not allowed for storedFileId parameter.");
         else if (resourceIdParams.length == 0)
-            throw new UnAuthorizedException("No storedFileId parameter is present.");
+            throw new InvalidHttpRequestException("No storedFileId parameter is present.");
 
         return Long.parseLong(resourceIdParams[0]);
+    }
+
+    private FileAccessType getRequestedFileAccessType(HttpServletRequest httpServletRequest) {
+        HttpMethod httpMethod = HttpMethod.resolve(httpServletRequest.getMethod());
+        if (httpMethod == null)
+            throw new InvalidHttpRequestException("No HttpMethod is specified!");
+
+        switch (httpMethod) {
+            case GET:
+                return FileAccessType.READ;
+            case DELETE:
+                return FileAccessType.DELETE;
+            default:
+                throw new InvalidHttpRequestException("Cannot map given HttpMethod to FileAccessType: " + httpMethod);
+        }
     }
 
     private Cookie getSessionCookie(HttpServletRequest httpServletRequest) {

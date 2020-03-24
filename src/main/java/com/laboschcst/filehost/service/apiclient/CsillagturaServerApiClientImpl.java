@@ -16,8 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.Map;
-
 @Service
 @RequiredArgsConstructor
 @HandledApiClient
@@ -28,7 +26,7 @@ public class CsillagturaServerApiClientImpl extends AbstractApiClient implements
     private final WebClient webClient;
 
     @Value("${apiClient.csillagturaServer.baseUrl}")
-    private String affiliatesPayoutBaseUrl;
+    private String csillagturaServerBaseUrl;
 
     @Value("${apiClient.csillagturaServer.sessionResolver.isUserAuthorizedToResource}")
     private String isAuthorizedToResourceUri;
@@ -64,7 +62,7 @@ public class CsillagturaServerApiClientImpl extends AbstractApiClient implements
 
     @Override
     protected String getApiBaseUrl() {
-        return affiliatesPayoutBaseUrl;
+        return csillagturaServerBaseUrl;
     }
 
     @Override
