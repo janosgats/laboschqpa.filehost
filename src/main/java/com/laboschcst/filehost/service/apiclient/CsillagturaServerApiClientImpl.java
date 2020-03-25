@@ -53,7 +53,7 @@ public class CsillagturaServerApiClientImpl extends AbstractApiClient implements
             throw new RuntimeException("Exception while converting internalResourceDto to JSON for request body!", e);
         } catch (ApiClientException e) {
             if (e.getHttpStatus() != null && e.getHttpStatus().is3xxRedirection())
-                return IsUserAuthorizedToResourceResponseDto.builder().authorized(false).build();//The user isn't logged in so got redirected.
+                return IsUserAuthorizedToResourceResponseDto.builder().authenticated(false).authorized(false).build();//The user isn't logged in so got redirected.
             else
                 throw e;
         }

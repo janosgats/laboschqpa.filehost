@@ -109,7 +109,7 @@ public abstract class AbstractApiClient {
                     response.statusCode(),
                     response.bodyToMono(String.class).block()
             );
-            throw new ApiClientException("HTTP status code indicates failure");
+            throw new ApiClientException("HTTP status code indicates failure", response.statusCode());
         }
     }
 }

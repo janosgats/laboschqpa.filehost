@@ -60,6 +60,9 @@ public class AuthFilter implements Filter {
                     InternalResourceDto requestedInternalResourceDto = InternalResourceDto.builder().storedFileId(requestedStoredFileId).fileAccessType(fileAccessType).build();
                     IsUserAuthorizedToResourceResponseDto responseDto = csillagturaServerApiClient.getIsAuthorizedToResource(sessionCookie.getValue(), requestedInternalResourceDto);
 
+                    if (!responseDto.isAuthenticated())
+                        throw new UnAuthorizedException("Cannot authenticate user of the session. You are probably not logged in.");
+
                     if (!responseDto.isAuthorized())
                         throw new UnAuthorizedException("User of the sent Session is unauthorized for the requested resource: " + requestedStoredFileId);
 
@@ -118,7 +121,7 @@ public class AuthFilter implements Filter {
                 }
             }
         }
-        throw new UnAuthorizedException("Cannot found session cookie!");
+        throw new InvalidHttpRequestException("Cannot found session cookie! You are probably not logged in.");
     }
 
     private boolean isAuthInterServiceHeaderValid(String authHeader) {
