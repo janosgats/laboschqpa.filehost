@@ -4,7 +4,7 @@ services:
   - docker
 
 before_install:
-  - docker build -t gjani/laboschcst-filehost -f docker/Dockerfile-k8s_dev-travis_build .
+  - docker build -t gjani/laboschqpa-filehost -f docker/Dockerfile-k8s_dev-travis_build .
 
 install: skip
 script: skip

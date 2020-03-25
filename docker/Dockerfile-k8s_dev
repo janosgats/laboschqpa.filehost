@@ -21,8 +21,8 @@ HEALTHCHECK --interval=15s \
 
 EXPOSE 30006
 EXPOSE 4200
-CMD ["java", "-jar", "-Dspring.profiles.active=k8s_dev",  "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:30006", "laboschcst.filehost.jar"]
+CMD ["java", "-jar", "-Dspring.profiles.active=k8s_dev",  "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:30006", "laboschqpa.filehost.jar"]
 
-COPY --chown=spring-user:spring-user target/laboschcst.filehost.jar ${APP_HOME}/laboschcst.filehost.jar
+COPY --chown=spring-user:spring-user target/laboschqpa.filehost.jar ${APP_HOME}/laboschqpa.filehost.jar
 
 USER spring-user
