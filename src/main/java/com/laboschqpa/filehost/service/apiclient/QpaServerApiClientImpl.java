@@ -2,9 +2,9 @@ package com.laboschqpa.filehost.service.apiclient;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.laboschqpa.filehost.api.dto.InternalResourceDto;
+import com.laboschqpa.filehost.api.dto.IndexedFileServingRequestDto;
 import com.laboschqpa.filehost.api.dto.IsUserAuthorizedToResourceResponseDto;
-import com.laboschqpa.filehost.config.annotation.HandledApiClient;
+import com.laboschqpa.filehost.config.annotation.ExceptionWrappedApiClient;
 import com.laboschqpa.filehost.exceptions.ApiClientException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -18,7 +18,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
 @RequiredArgsConstructor
-@HandledApiClient
+@ExceptionWrappedApiClient
 public class QpaServerApiClientImpl extends AbstractApiClient implements QpaServerApiClient
 {
     private static final Logger logger = LoggerFactory.getLogger(QpaServerApiClientImpl.class);
@@ -33,7 +33,7 @@ public class QpaServerApiClientImpl extends AbstractApiClient implements QpaServ
     private String isAuthorizedToResourceUri;
 
     @Override
-    public IsUserAuthorizedToResourceResponseDto getIsAuthorizedToResource(String sessionCookieValue, InternalResourceDto internalResourceDto) {
+    public IsUserAuthorizedToResourceResponseDto getIsAuthorizedToResource(String sessionCookieValue, IndexedFileServingRequestDto indexedFileServingRequestDto) {
         LinkedMultiValueMap<String, String> cookies = new LinkedMultiValueMap();
         cookies.add("SESSION", sessionCookieValue);
 
@@ -46,7 +46,7 @@ public class QpaServerApiClientImpl extends AbstractApiClient implements QpaServ
                     isAuthorizedToResourceUri,
                     HttpMethod.GET,
                     null,
-                    objectMapper.writeValueAsString(internalResourceDto),
+                    objectMapper.writeValueAsString(indexedFileServingRequestDto),
                     httpHeaders,
                     cookies
             );

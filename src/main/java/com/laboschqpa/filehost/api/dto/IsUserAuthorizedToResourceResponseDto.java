@@ -14,7 +14,5 @@ public class IsUserAuthorizedToResourceResponseDto {
     private boolean authenticated = true;
     @Builder.Default
     private boolean authorized = false;
-
-    private StoredFileDto storedFileDto;
 }
 

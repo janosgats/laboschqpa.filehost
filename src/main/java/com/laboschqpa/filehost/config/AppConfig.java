@@ -9,7 +9,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 @EnableAspectJAutoProxy
 public class AppConfig {
     @Bean
-    public WebClient smmPerformerWebClient() {
+    public WebClient webClient() {
         return WebClient.builder().build();
     }
 }

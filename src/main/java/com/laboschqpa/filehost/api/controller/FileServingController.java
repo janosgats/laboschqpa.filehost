@@ -1,26 +1,23 @@
 package com.laboschqpa.filehost.api.controller;
 
-import com.laboschqpa.filehost.config.filter.StoredFileRequestWrapper;
-import org.apache.commons.io.IOUtils;
-import org.springframework.beans.factory.annotation.Value;
+import com.laboschqpa.filehost.api.service.FileServingService;
+import com.laboschqpa.filehost.config.filter.FileServingHttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.*;
-import java.nio.file.Path;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/file")
 public class FileServingController {
-
-    @Value("${filehost.storedfiles.basepath}")
-    private String storedFilesBasePath;
+    private final FileServingService fileServingService;
 
     @GetMapping("/**")
-    public void getTest(StoredFileRequestWrapper request,
+    public void getTest(FileServingHttpServletRequest request,
                         OutputStream outputStream) throws IOException {
-        File f = new File(Path.of(storedFilesBasePath, request.getStoredFileDto().getPath()).toString());
-        IOUtils.copy(new FileInputStream(f), outputStream);
+        fileServingService.getTest(request, outputStream);
     }
 }

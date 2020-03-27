@@ -1,16 +1,14 @@
 package com.laboschqpa.filehost.api.dto;
 
 import com.laboschqpa.filehost.enums.FileAccessType;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class InternalResourceDto {
-    private Long storedFileId;
+@ToString
+public class IndexedFileServingRequestDto {
+    private Long indexedFileId;
     private FileAccessType fileAccessType;
 }

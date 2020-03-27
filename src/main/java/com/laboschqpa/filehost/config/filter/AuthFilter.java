@@ -2,9 +2,8 @@ package com.laboschqpa.filehost.config.filter;
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.laboschqpa.filehost.api.dto.InternalResourceDto;
+import com.laboschqpa.filehost.api.dto.IndexedFileServingRequestDto;
 import com.laboschqpa.filehost.api.dto.IsUserAuthorizedToResourceResponseDto;
-import com.laboschqpa.filehost.api.dto.StoredFileDto;
 import com.laboschqpa.filehost.enums.FileAccessType;
 import com.laboschqpa.filehost.exceptions.InvalidHttpRequestException;
 import com.laboschqpa.filehost.exceptions.UnAuthorizedException;
@@ -43,34 +42,31 @@ public class AuthFilter implements Filter {
             chain.doFilter(request, response);
         } else {
             try {
-                StoredFileDto storedFileDto = null;
-
                 String authInterServiceHeader = httpServletRequest.getHeader("AuthInterService");
                 if (authInterServiceHeader != null && !authInterServiceHeader.isBlank()) {
                     //Authorizing call between services
                     if (!isAuthInterServiceHeaderValid(authInterServiceHeader))
                         throw new UnAuthorizedException("AuthInterService header is invalid.");
+
+                    logger.trace("AuthFilter auth is valid for call between services.");
+                    chain.doFilter(request, response);
                 } else {
                     //Authorizing call from a user
                     Cookie sessionCookie = getSessionCookie(httpServletRequest);
-                    Long requestedStoredFileId = getRequestedStoredFileId(httpServletRequest);
 
-                    FileAccessType fileAccessType = getRequestedFileAccessType(httpServletRequest);
-
-                    InternalResourceDto requestedInternalResourceDto = InternalResourceDto.builder().storedFileId(requestedStoredFileId).fileAccessType(fileAccessType).build();
-                    IsUserAuthorizedToResourceResponseDto responseDto = qpaServerApiClient.getIsAuthorizedToResource(sessionCookie.getValue(), requestedInternalResourceDto);
+                    IndexedFileServingRequestDto indexedFileServingRequestDto = getIndexedFileResourceRequestDtoFromRequest(httpServletRequest);
+                    IsUserAuthorizedToResourceResponseDto responseDto = qpaServerApiClient.getIsAuthorizedToResource(sessionCookie.getValue(), indexedFileServingRequestDto);
 
                     if (!responseDto.isAuthenticated())
                         throw new UnAuthorizedException("Cannot authenticate user of the session. You are probably not logged in.");
 
                     if (!responseDto.isAuthorized())
-                        throw new UnAuthorizedException("User of the sent Session is unauthorized for the requested resource: " + requestedStoredFileId);
+                        throw new UnAuthorizedException("User of the sent Session is unauthorized for the requested resource: " + indexedFileServingRequestDto.getIndexedFileId());
 
-                    storedFileDto = responseDto.getStoredFileDto();
+                    logger.trace("AuthFilter auth is valid for call from a user.");
+                    chain.doFilter(new FileServingHttpServletRequest(httpServletRequest, indexedFileServingRequestDto), response);
                 }
 
-                logger.trace("AuthFilter auth is valid.");
-                chain.doFilter(new StoredFileRequestWrapper(httpServletRequest, storedFileDto), response);
             } catch (UnAuthorizedException e) {
                 logger.trace("Request is unauthorized in AuthFilter: " + e.getMessage());
                 writeErrorResponseBody((HttpServletResponse) response, "Unauthorized: " + e.getMessage(), HttpStatus.FORBIDDEN);
@@ -84,15 +80,26 @@ public class AuthFilter implements Filter {
         }
     }
 
-    private Long getRequestedStoredFileId(HttpServletRequest httpServletRequest) {
-        String[] resourceIdParams = httpServletRequest.getParameterValues("storedFileId");
+    private IndexedFileServingRequestDto getIndexedFileResourceRequestDtoFromRequest(HttpServletRequest httpServletRequest) {
+        Long requestedIndexedFileId = getRequestedIndexedFileId(httpServletRequest);
+        FileAccessType fileAccessType = getRequestedFileAccessType(httpServletRequest);
+
+        return IndexedFileServingRequestDto
+                .builder()
+                .indexedFileId(requestedIndexedFileId)
+                .fileAccessType(fileAccessType)
+                .build();
+    }
+
+    private Long getRequestedIndexedFileId(HttpServletRequest httpServletRequest) {
+        String[] resourceIdParams = httpServletRequest.getParameterValues("indexedFileId");
         if (resourceIdParams == null)
-            throw new InvalidHttpRequestException("No storedFileId parameter is present.");
+            throw new InvalidHttpRequestException("No indexedFileId parameter is present.");
 
         if (resourceIdParams.length > 1)
-            throw new InvalidHttpRequestException("Multi value is not allowed for storedFileId parameter.");
+            throw new InvalidHttpRequestException("Multi value is not allowed for indexedFileId parameter.");
         else if (resourceIdParams.length == 0)
-            throw new InvalidHttpRequestException("No storedFileId parameter is present.");
+            throw new InvalidHttpRequestException("No indexedFileId parameter is present.");
 
         return Long.parseLong(resourceIdParams[0]);
     }

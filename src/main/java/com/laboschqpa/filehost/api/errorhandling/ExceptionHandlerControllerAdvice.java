@@ -3,6 +3,7 @@ package com.laboschqpa.filehost.api.errorhandling;
 import com.laboschqpa.filehost.exceptions.ConflictingRequestDataApiException;
 import com.laboschqpa.filehost.exceptions.ContentNotFoundApiException;
 import com.laboschqpa.filehost.exceptions.UnAuthorizedException;
+import com.laboschqpa.filehost.exceptions.fileserving.FileServingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -50,6 +51,13 @@ public class ExceptionHandlerControllerAdvice extends ResponseEntityExceptionHan
             Exception e, WebRequest request) {
         loggerOfChild.error("UnAuthorizedException caught while executing api request!", e);
         return new ResponseEntity<>(unAuthorizedErrorResponseBody, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(FileServingException.class)
+    protected ResponseEntity<ApiErrorResponseBody> handleFileServing(
+            Exception e, WebRequest request) {
+        loggerOfChild.warn("FileServingException caught while executing api request!", e);
+        return new ResponseEntity<>(new ApiErrorResponseBody(e.getMessage()), HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(Exception.class)
