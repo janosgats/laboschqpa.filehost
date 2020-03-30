@@ -1,8 +1,28 @@
-package com.laboschqpa.filehost.model;
+package com.laboschqpa.filehost.model.file;
 
+import java.io.InputStream;
 import java.time.Instant;
 
-public interface ServiceableFile extends ServiceableStream, IndexedFile {
+public interface DownloadableFile extends IndexedFile {
+    /**
+     * Gets the stream length in bytes.
+     *
+     * @return {@code Null}, if length is unavailable.
+     */
+    Long getSize();
+
+    /**
+     * Gets the file's content.
+     */
+    InputStream getStream();
+
+    /**
+     * Gets the file's eTag value.
+     *
+     * @return {@code Null}, if eTag value is unavailable.
+     */
+    String getETag();
+
     /**
      * Gets the file's creation time.
      *

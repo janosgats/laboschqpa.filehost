@@ -10,7 +10,7 @@ public enum IndexedFileStatus {
     ADDED_TO_DATABASE_INDEX(0),
     PROCESSING(1),
     AVAILABLE(2),
-    FAILED(3),
+    FAILURE(3),
     DELETED(4);
 
     private Integer value;

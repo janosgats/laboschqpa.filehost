@@ -6,10 +6,10 @@ import com.laboschqpa.filehost.enums.IndexedFileStatus;
 import com.laboschqpa.filehost.exceptions.InvalidHttpRequestException;
 import com.laboschqpa.filehost.exceptions.fileserving.FileIsNotAvailableException;
 import com.laboschqpa.filehost.exceptions.fileserving.FileSavingException;
-import com.laboschqpa.filehost.model.SaveableFile;
-import com.laboschqpa.filehost.model.SaveableFileFactory;
-import com.laboschqpa.filehost.model.ServiceableFile;
-import com.laboschqpa.filehost.model.ServiceableFileFactory;
+import com.laboschqpa.filehost.model.file.SaveableFile;
+import com.laboschqpa.filehost.model.file.factory.SaveableFileFactory;
+import com.laboschqpa.filehost.model.file.DownloadableFile;
+import com.laboschqpa.filehost.model.file.factory.DownloadableFileFactory;
 import com.laboschqpa.filehost.repo.IndexedFileEntityRepository;
 import lombok.RequiredArgsConstructor;
 import org.apache.tomcat.util.http.fileupload.FileItemIterator;
@@ -40,30 +40,30 @@ public class FileServingService {
 
     private final ServletFileUpload servletFileUpload = new ServletFileUpload();
 
-    private final ServiceableFileFactory serviceableFileFactory;
+    private final DownloadableFileFactory downloadableFileFactory;
     private final SaveableFileFactory saveableFileFactory;
     private final IndexedFileEntityRepository indexedFileEntityRepository;
 
     public ResponseEntity<Resource> downloadFile(FileServingHttpServletRequest request) {
-        ServiceableFile serviceableFile = serviceableFileFactory.from(request.getIndexedFileServingRequestDto());
+        DownloadableFile downloadableFile = downloadableFileFactory.from(request.getIndexedFileServingRequestDto());
 
-        if (serviceableFile.isAvailable()) {
+        if (downloadableFile.isAvailable()) {
             String ifNoneMatchHeaderValue = request.getHeader(HttpHeaders.IF_NONE_MATCH);
             if (ifNoneMatchHeaderValue != null
                     && !ifNoneMatchHeaderValue.isBlank()
-                    && ifNoneMatchHeaderValue.equals(serviceableFile.getETag())) {
+                    && ifNoneMatchHeaderValue.equals(downloadableFile.getETag())) {
                 logger.trace("ETag matches. Returning 304 - Not modified");
                 return new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
             }
 
             HttpHeaders httpHeaders = new HttpHeaders();
             httpHeaders.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-            httpHeaders.setContentLength(serviceableFile.getSize());
-            httpHeaders.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + serviceableFile.getOriginalFileName() + "\"");
+            httpHeaders.setContentLength(downloadableFile.getSize());
+            httpHeaders.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + downloadableFile.getOriginalFileName() + "\"");
 
-            return new ResponseEntity<>(new InputStreamResource(serviceableFile.getStream()), httpHeaders, HttpStatus.OK);
+            return new ResponseEntity<>(new InputStreamResource(downloadableFile.getStream()), httpHeaders, HttpStatus.OK);
         } else {
-            throw new FileIsNotAvailableException("The requested file is not available for download. File status: " + serviceableFile.getStatus());
+            throw new FileIsNotAvailableException("The requested file is not available for download. File status: " + downloadableFile.getStatus());
         }
     }
 
@@ -113,7 +113,7 @@ public class FileServingService {
             logger.debug("New file uploaded and saved: {}", newSaveableFile.getIndexedFileEntity().toString());
         } catch (Exception e) {
             if (newSaveableFile != null) {
-                newSaveableFile.getIndexedFileEntity().setStatus(IndexedFileStatus.FAILED);
+                newSaveableFile.getIndexedFileEntity().setStatus(IndexedFileStatus.FAILURE);
                 indexedFileEntityRepository.save(newSaveableFile.getIndexedFileEntity());
             }
             throw new FileSavingException("Exception while handling saving of the uploaded file!", e);

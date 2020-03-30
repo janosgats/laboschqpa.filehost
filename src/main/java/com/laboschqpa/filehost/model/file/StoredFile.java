@@ -1,4 +1,4 @@
-package com.laboschqpa.filehost.model;
+package com.laboschqpa.filehost.model.file;
 
 import com.laboschqpa.filehost.entity.StoredFileEntity;
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
@@ -12,7 +12,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Objects;
 
-public class StoredFile implements ServiceableFile, DeletableFile, SaveableFile {
+public class StoredFile implements DownloadableFile, DeletableFile, SaveableFile {
     private final StoredFileUtils storedFileUtils;
     private final StoredFileEntity storedFileEntity;
 
@@ -111,8 +111,12 @@ public class StoredFile implements ServiceableFile, DeletableFile, SaveableFile 
             throw new FileServingException("File is not existing currently!");
 
         try {
+            storedFileEntity.setStatus(IndexedFileStatus.DELETED);
+            storedFileUtils.saveStoredFileEntity(storedFileEntity);
             java.nio.file.Files.delete(Path.of(file.getAbsolutePath()));
         } catch (IOException e) {
+            storedFileEntity.setStatus(IndexedFileStatus.FAILURE);
+            storedFileUtils.saveStoredFileEntity(storedFileEntity);
             throw new FileServingException("Cannot delete file: " + file.getAbsolutePath(), e);
         }
     }

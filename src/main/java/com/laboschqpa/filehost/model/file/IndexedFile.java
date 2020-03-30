@@ -1,4 +1,4 @@
-package com.laboschqpa.filehost.model;
+package com.laboschqpa.filehost.model.file;
 
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
 import com.laboschqpa.filehost.enums.IndexedFileStatus;

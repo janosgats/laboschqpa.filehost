@@ -1,7 +1,9 @@
-package com.laboschqpa.filehost.model;
+package com.laboschqpa.filehost.model.file.factory;
 
 import com.laboschqpa.filehost.entity.StoredFileEntity;
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
+import com.laboschqpa.filehost.model.file.SaveableFile;
+import com.laboschqpa.filehost.model.file.StoredFile;
 import com.laboschqpa.filehost.repo.StoredFileEntityRepository;
 import com.laboschqpa.filehost.util.StoredFileUtils;
 import lombok.RequiredArgsConstructor;

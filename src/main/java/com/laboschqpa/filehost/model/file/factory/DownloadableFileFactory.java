@@ -1,10 +1,12 @@
-package com.laboschqpa.filehost.model;
+package com.laboschqpa.filehost.model.file.factory;
 
 import com.laboschqpa.filehost.api.dto.IndexedFileServingRequestDto;
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
 import com.laboschqpa.filehost.entity.StoredFileEntity;
 import com.laboschqpa.filehost.exceptions.ContentNotFoundApiException;
 import com.laboschqpa.filehost.exceptions.InvalidHttpRequestException;
+import com.laboschqpa.filehost.model.file.DownloadableFile;
+import com.laboschqpa.filehost.model.file.StoredFile;
 import com.laboschqpa.filehost.repo.IndexedFileEntityRepository;
 import com.laboschqpa.filehost.util.StoredFileUtils;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +16,7 @@ import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
-public class ServiceableFileFactory {
+public class DownloadableFileFactory {
     private final IndexedFileEntityRepository indexedFileEntityRepository;
     private final StoredFileUtils storedFileUtils;
 
@@ -22,7 +24,7 @@ public class ServiceableFileFactory {
         return new StoredFile(storedFileUtils, storedFileEntity);
     }
 
-    public ServiceableFile from(IndexedFileServingRequestDto fileServingRequestDto) {
+    public DownloadableFile from(IndexedFileServingRequestDto fileServingRequestDto) {
         Long indexedFileId = fileServingRequestDto.getIndexedFileId();
         Optional<IndexedFileEntity> indexedFileOptional = indexedFileEntityRepository.findById(indexedFileId);
 

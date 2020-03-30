@@ -1,4 +1,4 @@
-package com.laboschqpa.filehost.model;
+package com.laboschqpa.filehost.model.file;
 
 import java.io.InputStream;
 
