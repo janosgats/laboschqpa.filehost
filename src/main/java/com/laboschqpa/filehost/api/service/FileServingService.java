@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.tomcat.util.http.fileupload.FileItemIterator;
 import org.apache.tomcat.util.http.fileupload.FileItemStream;
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
+import org.apache.tomcat.util.http.fileupload.MultipartStream;
 import org.apache.tomcat.util.http.fileupload.servlet.ServletFileUpload;
 import org.apache.tomcat.util.http.fileupload.util.Streams;
 import org.slf4j.Logger;
@@ -76,8 +77,8 @@ public class FileServingService {
         while (iterator.hasNext()) {
             FileItemStream item = iterator.next();
             String fieldName = item.getFieldName();
-
-            try (InputStream inputStream = item.openStream()) {
+            InputStream inputStream = item.openStream();
+            try {
                 if (item.isFormField()) {
                     logger.trace("Multipart form field {} with value {} detected.", fieldName, Streams.asString(inputStream));
                 } else {
@@ -85,6 +86,21 @@ public class FileServingService {
                     logger.trace("Multipart file field {} with fileName {} detected.", fieldName, originalFileName);
                     saveNewFile(inputStream, originalFileName);
                 }
+            } catch (Exception e) {
+                /*
+                    We use "MultipartStream.ItemInputStream.close(true)", because the original close() doesn't close the HTTP stream
+                    just skips the incoming bytes to the next multipart file.
+                    If there was en error in any of the files, we don't want to wait the end of the whole HTTP stream, so hard-close the stream by close(true).
+                    This way we don't harm the resources unlike the original skipping & waiting behavior.
+                 */
+                if (inputStream instanceof MultipartStream.ItemInputStream) {
+                    logger.trace("Hard-closing multipart stream.");
+                    ((MultipartStream.ItemInputStream) inputStream).close(true);
+                    throw new FileSavingException("Exception occurred while saving file, so Multipart stream was hard-closed.", e);
+                }
+                throw new FileSavingException("Exception occurred while saving file.", e);
+            } finally {
+                inputStream.close();
             }
         }
     }
@@ -94,6 +110,7 @@ public class FileServingService {
         try {
             newSaveableFile = saveableFileFactory.fromFileUploadStream(originalFileName);
             newSaveableFile.saveFromStream(fileUploadingInputStream);
+            logger.debug("New file uploaded and saved: {}", newSaveableFile.getIndexedFileEntity().toString());
         } catch (Exception e) {
             if (newSaveableFile != null) {
                 newSaveableFile.getIndexedFileEntity().setStatus(IndexedFileStatus.FAILED);

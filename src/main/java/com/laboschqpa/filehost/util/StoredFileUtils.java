@@ -10,6 +10,7 @@ import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -29,8 +30,8 @@ public class StoredFileUtils {
     @Value("${filehost.upload.filemaxsize}")
     private Long uploadFileMaxSize;
 
-    @Value("${filehost.upload.filewritingbuffersize}")
-    private Integer uploadFileWritingBufferSize;
+    @Value("${filehost.upload.filesavingbuffersize}")
+    private Integer uploadFileSavingBufferSize;
 
     private final StoredFileEntityRepository storedFileEntityRepository;
 
@@ -57,9 +58,12 @@ public class StoredFileUtils {
     public void writeWholeStreamToFile(InputStream streamToWriteToFile, File file) {
         handleDirectoryStructureBeforeWritingToFile(file);
 
-        try (FileOutputStream fileOutputStream
-                     = new FileOutputStream(file, false)) {
-            IOUtils.copy(streamToWriteToFile, fileOutputStream, getUploadFileWritingBufferSize());
+        try (BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(
+                new FileOutputStream(file, false),
+                getUploadFileSavingBufferSize()
+        )) {
+            IOUtils.copy(streamToWriteToFile, bufferedOutputStream, getUploadFileSavingBufferSize());
+            bufferedOutputStream.flush();
         } catch (Exception e) {
             throw new FileServingException("Cannot write stream to file!", e);
         }
@@ -77,8 +81,8 @@ public class StoredFileUtils {
         return uploadFileMaxSize;
     }
 
-    public Integer getUploadFileWritingBufferSize() {
-        return uploadFileWritingBufferSize;
+    public Integer getUploadFileSavingBufferSize() {
+        return uploadFileSavingBufferSize;
     }
 
     public StoredFileEntity saveStoredFileEntity(StoredFileEntity storedFileEntity) {
