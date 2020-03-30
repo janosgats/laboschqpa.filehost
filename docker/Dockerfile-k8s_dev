@@ -7,10 +7,6 @@ ENV LOGGING_ENABLE_LOCALDEV_CONSOLE_APPENDER=true
 RUN groupadd -g 10002 spring-user && \
     useradd -m -u 10002 -g spring-user spring-user
 
-# TEST files copied into the container if not using k8s PersistentVolume. Only for local development.
-#COPY --chown=spring-user:spring-user tmp/test_image1.png /srv/filehost/storedfiles/2020/03/23/file1.sf
-### End of test files
-
 WORKDIR ${APP_HOME}
 
 HEALTHCHECK --interval=15s \

@@ -1,28 +1,8 @@
 package com.laboschqpa.filehost.model;
 
-import java.io.InputStream;
 import java.time.Instant;
 
-public interface ServiceableFile {
-    /**
-     * Gets the stream length in bytes.
-     *
-     * @return {@code Null}, if length is unavailable.
-     */
-    Long getSize();
-
-    /**
-     * Gets the file's content.
-     */
-    InputStream getStream();
-
-    /**
-     * Gets the file's eTag value.
-     *
-     * @return {@code Null}, if eTag value is unavailable.
-     */
-    String getETag();
-
+public interface ServiceableFile extends ServiceableStream, IndexedFile {
     /**
      * Gets the file's creation time.
      *
@@ -38,8 +18,9 @@ public interface ServiceableFile {
     Instant getUpdateTime();
 
     /**
-     * Gets if the file is available for download. E.g. it's not under postprocessing.
+     * Gets the original file name.
+     *
+     * @return {@code Null}, if original file name is unavailable.
      */
-    boolean isAvailable();
-
+    String getOriginalFileName();
 }

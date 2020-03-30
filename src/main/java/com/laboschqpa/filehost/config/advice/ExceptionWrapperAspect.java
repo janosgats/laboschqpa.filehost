@@ -23,7 +23,7 @@ public class ExceptionWrapperAspect {
             throw e;//letting these exceptions pass through untouched
         } catch (Exception e) {
             logger.error("ExceptionWrapperAspect caught an exception in an ApiClient: {} - {}", e.getClass().getSimpleName(), e.getMessage());
-            throw new ApiClientException("Exception was thrown in an ApiClient!", e);
+            throw new ApiClientException("Exception was thrown in an ApiClient: " + e.getClass().getSimpleName() + " - " + e.getMessage(), e);
         }
     }
 
@@ -35,7 +35,7 @@ public class ExceptionWrapperAspect {
             throw e;//letting these exceptions pass through untouched
         } catch (Exception e) {
             logger.error("ExceptionWrapperAspect caught an exception in an ExceptionWrappedFileServingClass: {} - {}", e.getClass().getSimpleName(), e.getMessage());
-            throw new FileServingException("Exception was thrown in an ExceptionWrappedFileServingClass!", e);
+            throw new FileServingException("Exception was thrown in an ExceptionWrappedFileServingClass: " + e.getClass().getSimpleName() + " - " + e.getMessage(), e);
         }
     }
 }

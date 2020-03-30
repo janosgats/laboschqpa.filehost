@@ -1,38 +1,43 @@
 package com.laboschqpa.filehost.model;
 
 import com.laboschqpa.filehost.entity.StoredFileEntity;
-import com.laboschqpa.filehost.enums.StoredFileStatus;
+import com.laboschqpa.filehost.enums.IndexedFileStatus;
 import com.laboschqpa.filehost.exceptions.fileserving.FileServingException;
 import com.laboschqpa.filehost.exceptions.fileserving.InvalidStoredFileException;
+import com.laboschqpa.filehost.model.streaming.ReadTrackingInputStream;
+import com.laboschqpa.filehost.util.StoredFileUtils;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Objects;
 
-public class StoredFile implements ServiceableFile, DeletableFile {
-    private final String storedFilesBasePath;
-
+public class StoredFile implements ServiceableFile, DeletableFile, SaveableFile {
+    private final StoredFileUtils storedFileUtils;
     private final StoredFileEntity storedFileEntity;
-    private final File file;
 
-    private FileInputStream fileInputStream;
+    private File file;
+
+    private FileInputStream readingStream;
 
 
-    public StoredFile(String storedFilesBasePath, StoredFileEntity storedFileEntity) {
-        this.storedFilesBasePath = storedFilesBasePath;
-        this.storedFileEntity = storedFileEntity;
-
-        file = new File(getFullPathFromStoredFileEntityPath(storedFileEntity.getPath()));
-
-        if (!file.exists() || !file.isFile())
-            throw new InvalidStoredFileException("File from storedFileEntity is not a valid file: " + file.getAbsolutePath());
+    public StoredFile(StoredFileUtils storedFileUtils, StoredFileEntity storedFileEntity) {
+        this(storedFileUtils, storedFileEntity, true);
     }
 
-    private String getFullPathFromStoredFileEntityPath(String storedFileEntityPath) {
-        return Path.of(storedFilesBasePath, storedFileEntityPath).toString();
+    public StoredFile(StoredFileUtils storedFileUtils, StoredFileEntity storedFileEntity, boolean assertFileCurrentlyExists) {
+        Objects.requireNonNull(storedFileUtils);
+        Objects.requireNonNull(storedFileEntity);
+
+        this.storedFileUtils = storedFileUtils;
+        this.storedFileEntity = storedFileEntity;
+
+        file = new File(storedFileUtils.getFullPathFromStoredFileEntityPath(storedFileEntity.getPath()));
+
+        if (assertFileCurrentlyExists) {
+            if (!isFileCurrentlyExisting())
+                throw new InvalidStoredFileException("File from storedFileEntity is not a valid file: " + file.getAbsolutePath());
+        }
     }
 
     @Override
@@ -41,16 +46,38 @@ public class StoredFile implements ServiceableFile, DeletableFile {
     }
 
     @Override
+    public void saveFromStream(InputStream fileUploadingInputStream) {
+        ReadTrackingInputStream readTrackingInputStream = new ReadTrackingInputStream(fileUploadingInputStream);
+        readTrackingInputStream.setLimit(storedFileUtils.getUploadFileMaxSize());
+
+        storedFileEntity.setStatus(IndexedFileStatus.PROCESSING);
+        storedFileUtils.saveStoredFileEntity(storedFileEntity);
+
+        storedFileUtils.writeWholeStreamToFile(readTrackingInputStream, file);
+
+        storedFileEntity.setSize(readTrackingInputStream.getCountOfReadBytes());
+        storedFileEntity.setStatus(IndexedFileStatus.AVAILABLE);
+
+        storedFileUtils.saveStoredFileEntity(storedFileEntity);
+    }
+
+    @Override
     public InputStream getStream() {
-        if (fileInputStream == null) {
+        if (!isFileCurrentlyExisting())
+            throw new FileServingException("File is not existing currently!");
+
+        if (!isAvailable())
+            throw new FileServingException("The file is not available (yet)!");
+
+        if (readingStream == null) {
             try {
-                this.fileInputStream = new FileInputStream(file);
+                this.readingStream = new FileInputStream(file);
             } catch (Exception e) {
-                throw new FileServingException("Cannot instantiate FileInputStream from storedFileEntity!", e);
+                throw new FileServingException("Cannot instantiate FileInputStream from StoredFile::file!", e);
             }
         }
 
-        return fileInputStream;
+        return readingStream;
     }
 
     @Override
@@ -69,16 +96,33 @@ public class StoredFile implements ServiceableFile, DeletableFile {
     }
 
     @Override
+    public String getOriginalFileName() {
+        return storedFileEntity.getOriginalFileName();
+    }
+
+    @Override
     public boolean isAvailable() {
-        return storedFileEntity.getStatus() == StoredFileStatus.AVAILABLE;
+        return storedFileEntity.getStatus() == IndexedFileStatus.AVAILABLE;
     }
 
     @Override
     public void delete() {
+        if (!isFileCurrentlyExisting())
+            throw new FileServingException("File is not existing currently!");
+
         try {
             java.nio.file.Files.delete(Path.of(file.getAbsolutePath()));
         } catch (IOException e) {
             throw new FileServingException("Cannot delete file: " + file.getAbsolutePath(), e);
         }
+    }
+
+    private boolean isFileCurrentlyExisting() {
+        return file != null && file.exists() && file.isFile();
+    }
+
+    @Override
+    public StoredFileEntity getIndexedFileEntity() {
+        return storedFileEntity;
     }
 }

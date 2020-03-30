@@ -39,7 +39,7 @@ public class AuthFilter implements Filter {
 
         if (authNSkipAll) {
             logger.trace("Skipping auth filter according to application.properties!");
-            chain.doFilter(request, response);
+            chain.doFilter(new FileServingHttpServletRequest(httpServletRequest, getIndexedFileResourceRequestDtoFromRequest(httpServletRequest)), response);
         } else {
             try {
                 String authInterServiceHeader = httpServletRequest.getHeader("AuthInterService");
@@ -59,6 +59,9 @@ public class AuthFilter implements Filter {
 
                     if (!responseDto.isAuthenticated())
                         throw new UnAuthorizedException("Cannot authenticate user of the session. You are probably not logged in.");
+
+                    if (!responseDto.isCsrfValid())
+                        throw new UnAuthorizedException("CSRF token is invalid.");
 
                     if (!responseDto.isAuthorized())
                         throw new UnAuthorizedException("User of the sent Session is unauthorized for the requested resource: " + indexedFileServingRequestDto.getIndexedFileId());
@@ -81,11 +84,21 @@ public class AuthFilter implements Filter {
     }
 
     private IndexedFileServingRequestDto getIndexedFileResourceRequestDtoFromRequest(HttpServletRequest httpServletRequest) {
-        Long requestedIndexedFileId = getRequestedIndexedFileId(httpServletRequest);
+        HttpMethod httpMethod = HttpMethod.resolve(httpServletRequest.getMethod());
+        if (httpMethod == null)
+            throw new InvalidHttpRequestException("No valid HttpMethod is specified! (" + httpServletRequest.getMethod() + ")");
+        String csrfToken = httpServletRequest.getHeader("X-CSRF-TOKEN");
+
         FileAccessType fileAccessType = getRequestedFileAccessType(httpServletRequest);
+
+        Long requestedIndexedFileId = null;
+        if (fileAccessType == FileAccessType.READ || fileAccessType == FileAccessType.DELETE)
+            requestedIndexedFileId = getRequestedIndexedFileId(httpServletRequest);
 
         return IndexedFileServingRequestDto
                 .builder()
+                .httpMethod(httpMethod)
+                .csrfToken(csrfToken)
                 .indexedFileId(requestedIndexedFileId)
                 .fileAccessType(fileAccessType)
                 .build();
@@ -107,13 +120,15 @@ public class AuthFilter implements Filter {
     private FileAccessType getRequestedFileAccessType(HttpServletRequest httpServletRequest) {
         HttpMethod httpMethod = HttpMethod.resolve(httpServletRequest.getMethod());
         if (httpMethod == null)
-            throw new InvalidHttpRequestException("No HttpMethod is specified!");
+            throw new InvalidHttpRequestException("No valid HttpMethod is specified! (" + httpServletRequest.getMethod() + ")");
 
         switch (httpMethod) {
             case GET:
                 return FileAccessType.READ;
             case DELETE:
                 return FileAccessType.DELETE;
+            case POST:
+                return FileAccessType.UPLOAD;
             default:
                 throw new InvalidHttpRequestException("Cannot map given HttpMethod to FileAccessType: " + httpMethod);
         }
@@ -146,7 +161,7 @@ public class AuthFilter implements Filter {
         httpServletResponse.setStatus(httpStatus.value());
     }
 
-    @Value("${authn.skip.all:false}")
+    @Value("${authfilter.skip.all:false}")
     public void setAuthNSkipAll(Boolean authNSkipAll) {
         this.authNSkipAll = authNSkipAll;
     }
