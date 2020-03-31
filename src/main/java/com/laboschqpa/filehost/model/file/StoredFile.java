@@ -4,7 +4,7 @@ import com.laboschqpa.filehost.entity.StoredFileEntity;
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
 import com.laboschqpa.filehost.exceptions.fileserving.FileServingException;
 import com.laboschqpa.filehost.exceptions.fileserving.InvalidStoredFileException;
-import com.laboschqpa.filehost.model.streaming.ReadTrackingInputStream;
+import com.laboschqpa.filehost.model.streamtracking.TrackingInputStream;
 import com.laboschqpa.filehost.util.StoredFileUtils;
 
 import java.io.*;
@@ -46,16 +46,13 @@ public class StoredFile implements DownloadableFile, DeletableFile, SaveableFile
     }
 
     @Override
-    public void saveFromStream(InputStream fileUploadingInputStream) {
-        ReadTrackingInputStream readTrackingInputStream = new ReadTrackingInputStream(fileUploadingInputStream);
-        readTrackingInputStream.setLimit(storedFileUtils.getUploadFileMaxSize());
-
+    public void saveFromStream(TrackingInputStream fileUploadingInputStream) {
         storedFileEntity.setStatus(IndexedFileStatus.PROCESSING);
         storedFileUtils.saveStoredFileEntity(storedFileEntity);
 
-        storedFileUtils.writeWholeStreamToFile(readTrackingInputStream, file);
+        storedFileUtils.writeWholeStreamToFile(fileUploadingInputStream, file);
 
-        storedFileEntity.setSize(readTrackingInputStream.getCountOfReadBytes());
+        storedFileEntity.setSize(fileUploadingInputStream.getCountOfReadBytes());
         storedFileEntity.setStatus(IndexedFileStatus.AVAILABLE);
 
         storedFileUtils.saveStoredFileEntity(storedFileEntity);

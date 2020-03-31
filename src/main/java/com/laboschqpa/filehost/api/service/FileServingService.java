@@ -10,6 +10,8 @@ import com.laboschqpa.filehost.model.file.SaveableFile;
 import com.laboschqpa.filehost.model.file.factory.SaveableFileFactory;
 import com.laboschqpa.filehost.model.file.DownloadableFile;
 import com.laboschqpa.filehost.model.file.factory.DownloadableFileFactory;
+import com.laboschqpa.filehost.model.streamtracking.TrackingInputStream;
+import com.laboschqpa.filehost.model.streamtracking.TrackingInputStreamFactory;
 import com.laboschqpa.filehost.repo.IndexedFileEntityRepository;
 import lombok.RequiredArgsConstructor;
 import org.apache.tomcat.util.http.fileupload.FileItemIterator;
@@ -20,6 +22,7 @@ import org.apache.tomcat.util.http.fileupload.servlet.ServletFileUpload;
 import org.apache.tomcat.util.http.fileupload.util.Streams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -40,9 +43,13 @@ public class FileServingService {
 
     private final ServletFileUpload servletFileUpload = new ServletFileUpload();
 
+    @Value("${filehost.upload.filemaxsize}")
+    private Long uploadFileMaxSize;
+
     private final DownloadableFileFactory downloadableFileFactory;
     private final SaveableFileFactory saveableFileFactory;
     private final IndexedFileEntityRepository indexedFileEntityRepository;
+    private final TrackingInputStreamFactory trackingInputStreamFactory;
 
     public ResponseEntity<Resource> downloadFile(FileServingHttpServletRequest request) {
         DownloadableFile downloadableFile = downloadableFileFactory.from(request.getIndexedFileServingRequestDto());
@@ -61,7 +68,8 @@ public class FileServingService {
             httpHeaders.setContentLength(downloadableFile.getSize());
             httpHeaders.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + downloadableFile.getOriginalFileName() + "\"");
 
-            return new ResponseEntity<>(new InputStreamResource(downloadableFile.getStream()), httpHeaders, HttpStatus.OK);
+            TrackingInputStream downloadTrackingStream = trackingInputStreamFactory.createForFileDownload(downloadableFile.getStream());
+            return new ResponseEntity<>(new InputStreamResource(downloadTrackingStream), httpHeaders, HttpStatus.OK);
         } else {
             throw new FileIsNotAvailableException("The requested file is not available for download. File status: " + downloadableFile.getStatus());
         }
@@ -109,7 +117,11 @@ public class FileServingService {
         SaveableFile newSaveableFile = null;
         try {
             newSaveableFile = saveableFileFactory.fromFileUploadStream(originalFileName);
-            newSaveableFile.saveFromStream(fileUploadingInputStream);
+
+            TrackingInputStream trackingInputStream = trackingInputStreamFactory.createForFileUpload(fileUploadingInputStream);
+            trackingInputStream.setLimit(uploadFileMaxSize);
+
+            newSaveableFile.saveFromStream(trackingInputStream);
             logger.debug("New file uploaded and saved: {}", newSaveableFile.getIndexedFileEntity().toString());
         } catch (Exception e) {
             if (newSaveableFile != null) {

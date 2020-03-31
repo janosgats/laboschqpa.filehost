@@ -1,6 +1,6 @@
 package com.laboschqpa.filehost.model.file;
 
-import java.io.InputStream;
+import com.laboschqpa.filehost.model.streamtracking.TrackingInputStream;
 
 public interface SaveableFile extends IndexedFile {
     /**
@@ -13,5 +13,5 @@ public interface SaveableFile extends IndexedFile {
     /**
      * Writes the given stream to the file. (Overwriting)
      */
-    void saveFromStream(InputStream fileUploadInputStream);
+    void saveFromStream(TrackingInputStream fileUploadInputStream);
 }

@@ -27,9 +27,6 @@ public class StoredFileUtils {
     @Value("${filehost.storedfiles.basepath}")
     private String storedFilesBasePath;
 
-    @Value("${filehost.upload.filemaxsize}")
-    private Long uploadFileMaxSize;
-
     @Value("${filehost.upload.filesavingbuffersize}")
     private Integer uploadFileSavingBufferSize;
 
@@ -75,10 +72,6 @@ public class StoredFileUtils {
                 throw new FileSavingException("Couldn't create containing directory: " + file.getParentFile());
             }
         }
-    }
-
-    public Long getUploadFileMaxSize() {
-        return uploadFileMaxSize;
     }
 
     public Integer getUploadFileSavingBufferSize() {
