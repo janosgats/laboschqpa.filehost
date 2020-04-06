@@ -16,6 +16,13 @@ import java.io.OutputStream;
 public class TrackingInputStream extends InputStream {
     private static final Logger logger = LoggerFactory.getLogger(TrackingInputStream.class);
 
+    /**
+     * {@link StreamTracker#addToTrackedValue(long)} method is synchronized to be threadsafe,
+     * so we only add values of the current stream to the tracker periodically. (To cause fewer thread synchronizations.)
+     */
+    private static final Long STREAM_TRACKER_SYNCHRONIZATION_BYTE_COUNT_INTERVAL = 1000000L;
+    private long countOfReadBytesInCurrentInterval = 0;
+
     private final InputStream wrappedInputStream;
     private final StreamTracker streamTracker;
 
@@ -38,9 +45,19 @@ public class TrackingInputStream extends InputStream {
     }
 
     private void proceedStreamReadingStats(long newlyReadBytes) {
-        assertLengthLimit(countOfReadBytes + newlyReadBytes);
-        streamTracker.addToTrackedValue(newlyReadBytes);
+        countOfReadBytesInCurrentInterval += newlyReadBytes;
+        if (countOfReadBytesInCurrentInterval > STREAM_TRACKER_SYNCHRONIZATION_BYTE_COUNT_INTERVAL) {
+            registerCountOfReadBytesInCurrentIntervalIntoStreamTracker();
+        }
+
         countOfReadBytes += newlyReadBytes;
+        assertLengthLimit(countOfReadBytes);
+    }
+
+    private void registerCountOfReadBytesInCurrentIntervalIntoStreamTracker() {
+        streamTracker.addToTrackedValue(countOfReadBytesInCurrentInterval);
+        countOfReadBytesInCurrentInterval = 0;
+
     }
 
     private void assertLengthLimit(long countToCompareToLimit) {
@@ -112,6 +129,7 @@ public class TrackingInputStream extends InputStream {
 
     @Override
     public void close() throws IOException {
+        registerCountOfReadBytesInCurrentIntervalIntoStreamTracker();
         super.close();
         wrappedInputStream.close();
     }
