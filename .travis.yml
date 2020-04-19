@@ -5,14 +5,20 @@ services:
 
 before_install:
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  - SHORT_COMMIT_HASH=${TRAVIS_COMMIT::7}
+
   - IMAGE_NAME_CACHE_BUILDER=${DOCKER_USERNAME}/laboschqpa-filehost:builder
   - IMAGE_NAME_CACHE_FINAL=${DOCKER_USERNAME}/laboschqpa-filehost
+  - IMAGE_NAME_TAG=${DOCKER_USERNAME}/laboschqpa-filehost:$(date +%Y%m%d%H%M%S)_${SHORT_COMMIT_HASH}
+
   - docker pull ${IMAGE_NAME_CACHE_BUILDER} || true
   - docker pull ${IMAGE_NAME_CACHE_FINAL} || true
+
   - docker build --target=builder_image --cache-from ${IMAGE_NAME_CACHE_BUILDER} -t ${IMAGE_NAME_CACHE_BUILDER} -f docker/Dockerfile-k8s_dev-travis_build .
   - docker push ${IMAGE_NAME_CACHE_BUILDER}
-  - docker build --cache-from ${IMAGE_NAME_CACHE_BUILDER} --cache-from ${IMAGE_NAME_CACHE_FINAL} -t ${IMAGE_NAME_CACHE_FINAL} -f docker/Dockerfile-k8s_dev-travis_build .
+  - docker build --cache-from ${IMAGE_NAME_CACHE_BUILDER} --cache-from ${IMAGE_NAME_CACHE_FINAL} -t ${IMAGE_NAME_CACHE_FINAL} -t ${IMAGE_NAME_TAG} -f docker/Dockerfile-k8s_dev-travis_build .
   - docker push ${IMAGE_NAME_CACHE_FINAL}
+  - docker push ${IMAGE_NAME_TAG}
 
 install: skip
 script: skip
