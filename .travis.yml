@@ -9,7 +9,7 @@ before_install:
 
   - IMAGE_NAME_CACHE_BUILDER=${DOCKER_USERNAME}/laboschqpa-filehost:builder
   - IMAGE_NAME_CACHE_FINAL=${DOCKER_USERNAME}/laboschqpa-filehost
-  - IMAGE_NAME_TAG=${DOCKER_USERNAME}/laboschqpa-filehost:$(date +%Y%m%d%H%M%S)_${SHORT_COMMIT_HASH}
+  - IMAGE_NAME_TAG=${DOCKER_USERNAME}/laboschqpa-filehost:$(date +%Y%m%d_%H%M%S)_${SHORT_COMMIT_HASH}
 
   - docker pull ${IMAGE_NAME_CACHE_BUILDER} || true
   - docker pull ${IMAGE_NAME_CACHE_FINAL} || true
