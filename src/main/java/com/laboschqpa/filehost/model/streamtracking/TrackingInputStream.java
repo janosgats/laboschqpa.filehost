@@ -1,20 +1,18 @@
 package com.laboschqpa.filehost.model.streamtracking;
 
 import com.laboschqpa.filehost.exceptions.fileserving.StreamLengthLimitExceededException;
-import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.log4j.Log4j2;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+@Log4j2
 @RequiredArgsConstructor
 public class TrackingInputStream extends InputStream {
-    private static final Logger logger = LoggerFactory.getLogger(TrackingInputStream.class);
 
     /**
      * {@link StreamTracker#addToTrackedValue(long)} method is synchronized to be threadsafe,
