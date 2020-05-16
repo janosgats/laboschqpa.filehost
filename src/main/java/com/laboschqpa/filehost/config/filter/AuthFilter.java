@@ -24,12 +24,12 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @Component
-@Order(1)
+@Order(2)
 @RequiredArgsConstructor
 public class AuthFilter implements Filter {
     private static final Logger logger = LoggerFactory.getLogger(AuthFilter.class);
 
-    private boolean authNSkipAll;
+    private boolean authSkipAll;
 
     private final QpaServerApiClient qpaServerApiClient;
 
@@ -37,7 +37,7 @@ public class AuthFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
 
-        if (authNSkipAll) {
+        if (authSkipAll) {
             logger.trace("Skipping auth filter according to application.properties!");
             chain.doFilter(new FileServingHttpServletRequest(httpServletRequest, getIndexedFileResourceRequestDtoFromRequest(httpServletRequest)), response);
         } else {
@@ -162,7 +162,7 @@ public class AuthFilter implements Filter {
     }
 
     @Value("${authfilter.skip.all:false}")
-    public void setAuthNSkipAll(Boolean authNSkipAll) {
-        this.authNSkipAll = authNSkipAll;
+    public void setAuthSkipAll(Boolean authSkipAll) {
+        this.authSkipAll = authSkipAll;
     }
 }

@@ -11,8 +11,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 @Component
-public class ContextStaredEventListener implements ApplicationListener<ContextRefreshedEvent> {
-    private static final Logger logger = LoggerFactory.getLogger(ContextStaredEventListener.class);
+public class ContextStartedEventListener implements ApplicationListener<ContextRefreshedEvent> {
+    private static final Logger logger = LoggerFactory.getLogger(ContextStartedEventListener.class);
 
     private static volatile boolean wasGlobalStreamTrackerServiceStarted = false;
     private static final Object globalStreamTrackerServiceStartingLock = new Object();

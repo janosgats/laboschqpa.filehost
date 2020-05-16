@@ -2,7 +2,6 @@ package com.laboschqpa.filehost.service;
 
 import com.laboschqpa.filehost.model.streamtracking.StreamTracker;
 import com.laboschqpa.filehost.model.streamtracking.TrackedIntervalStateFormatters;
-import com.laboschqpa.filehost.model.streamtracking.TrackingIntervalState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
