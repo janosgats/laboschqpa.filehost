@@ -8,10 +8,14 @@ import java.util.Optional;
 
 public enum IndexedFileStatus {
     ADDED_TO_DATABASE_INDEX(0),
-    PROCESSING(1),
-    AVAILABLE(2),
-    FAILURE(3),
-    DELETED(4);
+    UPLOADING(1),
+    UPLOADED(2),
+    AVAILABLE(3),
+    DELETED(4),
+    FAILED(5),
+    ABORTED_BY_FILE_HOST(6),
+    CLEANED_UP_AFTER_FAILED(7),
+    CLEANED_UP_AFTER_ABORTED(8);
 
     private Integer value;
 

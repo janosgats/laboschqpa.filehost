@@ -2,7 +2,7 @@ package com.laboschqpa.filehost.model.file;
 
 import com.laboschqpa.filehost.model.streamtracking.TrackingInputStream;
 
-public interface SaveableFile extends IndexedFile {
+public interface UploadableFile extends IndexedFile {
     /**
      * Should be called after the file is saved.
      *
@@ -13,5 +13,5 @@ public interface SaveableFile extends IndexedFile {
     /**
      * Writes the given stream to the file. (Overwriting)
      */
-    void saveFromStream(TrackingInputStream fileUploadInputStream);
+    void saveFromStream(TrackingInputStream fileUploadInputStream, Long approximateFileSize);
 }

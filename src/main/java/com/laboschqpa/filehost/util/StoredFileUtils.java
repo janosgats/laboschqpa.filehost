@@ -27,9 +27,6 @@ public class StoredFileUtils {
     @Value("${filehost.storedfiles.basepath}")
     private String storedFilesBasePath;
 
-    @Value("${filehost.upload.filesavingbuffersize}")
-    private Integer uploadFileSavingBufferSize;
-
     private final StoredFileEntityRepository storedFileEntityRepository;
 
     public String getFullPathFromStoredFileEntityPath(String storedFileEntityPath) {
@@ -49,33 +46,6 @@ public class StoredFileUtils {
                 String.valueOf(zonedDateTime.getDayOfMonth()),
                 "f_" + storedFileEntityId + ".sf"
         ).toString();
-    }
-
-
-    public void writeWholeStreamToFile(InputStream streamToWriteToFile, File file) {
-        handleDirectoryStructureBeforeWritingToFile(file);
-
-        try (BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(
-                new FileOutputStream(file, false),
-                getUploadFileSavingBufferSize()
-        )) {
-            IOUtils.copy(streamToWriteToFile, bufferedOutputStream, getUploadFileSavingBufferSize());
-            bufferedOutputStream.flush();
-        } catch (Exception e) {
-            throw new FileServingException("Cannot write stream to file!", e);
-        }
-    }
-
-    private void handleDirectoryStructureBeforeWritingToFile(File file) {
-        if (!file.getParentFile().exists()) {
-            if (!file.getParentFile().mkdirs()) {
-                throw new FileSavingException("Couldn't create containing directory: " + file.getParentFile());
-            }
-        }
-    }
-
-    public Integer getUploadFileSavingBufferSize() {
-        return uploadFileSavingBufferSize;
     }
 
     public StoredFileEntity saveStoredFileEntity(StoredFileEntity storedFileEntity) {

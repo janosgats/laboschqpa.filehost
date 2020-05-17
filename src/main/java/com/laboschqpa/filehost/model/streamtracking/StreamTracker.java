@@ -48,7 +48,7 @@ public class StreamTracker {
     }
 
     /**
-     * @return elapsed time since last call to {@link StreamTracker#popTrackingIntervalState}
+     * @return trackedValueDifference since last call to {@link StreamTracker#popTrackingIntervalState}
      */
     public long peekTrackedValue() {
         return trackedValueDifference;

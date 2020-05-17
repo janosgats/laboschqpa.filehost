@@ -40,6 +40,10 @@ public class GlobalStreamTrackerService implements Runnable {
 
     @Override
     public void run() {
+        printRegisteredStreamTrackers();
+    }
+
+    private void printRegisteredStreamTrackers() {
         synchronized (streamTrackers) {
             for (StreamTracker streamTracker : streamTrackers) {
                 logger.debug("{}: {}", streamTracker.getName(), streamTracker.popAndFormatTrackingIntervalState());

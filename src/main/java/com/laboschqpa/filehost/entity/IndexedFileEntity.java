@@ -14,16 +14,25 @@ import javax.persistence.*;
 @Data
 @ToString
 @Entity
-@Table(name = "indexed_file")
+@Table(name = "indexed_file",
+        indexes = {
+                @Index(columnList = "owner_team_id", name = "owner_team"),
+                @Index(columnList = "owner_user_id, owner_team_id", name = "owner_user__owner_team"),
+                @Index(columnList = "status, owner_team_id", name = "status__owner_team"),
+                @Index(columnList = "status, owner_user_id, owner_team_id", name = "status__owner_user__owner_team")
+        }
+)
 @Inheritance(strategy = InheritanceType.JOINED)
 @DiscriminatorColumn(
         discriminatorType = DiscriminatorType.INTEGER,
-        name = "type_discriminator",
+        name = "dtype",
         columnDefinition = "TINYINT"
 )
 public class IndexedFileEntity {
-    public IndexedFileEntity(IndexedFileStatus status) {
+    public IndexedFileEntity(IndexedFileStatus status, Long ownerUserId, Long ownerTeamId) {
         this.status = status;
+        this.ownerUserId = ownerUserId;
+        this.ownerTeamId = ownerTeamId;
     }
 
     @Id
@@ -34,4 +43,10 @@ public class IndexedFileEntity {
     @Convert(converter = IndexedFileStatusAttributeConverter.class)
     @Column(name = "status", nullable = false)
     private IndexedFileStatus status;
+
+    @Column(name = "owner_user_id")
+    private Long ownerUserId;
+
+    @Column(name = "owner_team_id")
+    private Long ownerTeamId;
 }

@@ -11,12 +11,18 @@ import java.time.Instant;
 @NoArgsConstructor
 @ToString(callSuper = true)
 @Entity
-@Table(name = "stored_file")
+@Table(name = "stored_file",
+        indexes = {
+                @Index(columnList = "size", name = "size"),
+                @Index(columnList = "creation_time", name = "creation_time")
+        }
+)
 @DiscriminatorValue("1")
 public class StoredFileEntity extends IndexedFileEntity {
     @Builder
-    public StoredFileEntity(IndexedFileStatus status, final String path, final Long size, final Instant creationTime, final String eTag, final String originalFileName) {
-        super(status);
+    public StoredFileEntity(IndexedFileStatus status, Long ownerUserId, Long ownerTeamId, final String path, final Long size, final Instant creationTime,
+                            final String eTag, final String originalFileName) {
+        super(status, ownerUserId, ownerTeamId);
         this.path = path;
         this.size = size;
         this.creationTime = creationTime;

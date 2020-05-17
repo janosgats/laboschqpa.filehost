@@ -7,7 +7,8 @@ import com.laboschqpa.filehost.api.dto.IsUserAuthorizedToResourceResponseDto;
 import com.laboschqpa.filehost.enums.FileAccessType;
 import com.laboschqpa.filehost.exceptions.InvalidHttpRequestException;
 import com.laboschqpa.filehost.exceptions.UnAuthorizedException;
-import com.laboschqpa.filehost.service.apiclient.QpaServerApiClient;
+import com.laboschqpa.filehost.service.apiclient.qpaserver.GetIsUserAuthorizedToResourceDto;
+import com.laboschqpa.filehost.service.apiclient.qpaserver.QpaServerApiClient;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +29,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class AuthFilter implements Filter {
     private static final Logger logger = LoggerFactory.getLogger(AuthFilter.class);
+    private static final String AUTH_INTER_SERVICE_HEADER_NAME = "AuthInterService";
 
     private boolean authSkipAll;
 
@@ -35,55 +37,90 @@ public class AuthFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        HttpServletRequest httpServletRequest = (HttpServletRequest) request;
+        HttpServletRequest wrappedHttpServletRequest;
 
-        if (authSkipAll) {
-            logger.trace("Skipping auth filter according to application.properties!");
-            chain.doFilter(new FileServingHttpServletRequest(httpServletRequest, getIndexedFileResourceRequestDtoFromRequest(httpServletRequest)), response);
-        } else {
-            try {
-                String authInterServiceHeader = httpServletRequest.getHeader("AuthInterService");
-                if (authInterServiceHeader != null && !authInterServiceHeader.isBlank()) {
-                    //Authorizing call between services
-                    if (!isAuthInterServiceHeaderValid(authInterServiceHeader))
-                        throw new UnAuthorizedException("AuthInterService header is invalid.");
+        try {
+            wrappedHttpServletRequest = assertIfRequestProcessingCanBeContinuedAndGetWrappedHttpServletRequest((HttpServletRequest) request);
+        } catch (UnAuthorizedException e) {
+            logger.trace("Request is unauthorized in AuthFilter: " + e.getMessage());
+            writeErrorResponseBody((HttpServletResponse) response, "Unauthorized: " + e.getMessage(), HttpStatus.FORBIDDEN);
+            wrappedHttpServletRequest = null;
+        } catch (InvalidHttpRequestException e) {
+            writeErrorResponseBody((HttpServletResponse) response, "Invalid request: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+            wrappedHttpServletRequest = null;
+        } catch (Exception e) {
+            logger.debug("Exception thrown while trying to authenticate incoming request!", e);
+            writeErrorResponseBody((HttpServletResponse) response, "Exception thrown while trying to authenticate incoming request!", HttpStatus.INTERNAL_SERVER_ERROR);
+            wrappedHttpServletRequest = null;
+        }
 
-                    logger.trace("AuthFilter auth is valid for call between services.");
-                    chain.doFilter(request, response);
-                } else {
-                    //Authorizing call from a user
-                    Cookie sessionCookie = getSessionCookie(httpServletRequest);
-
-                    IndexedFileServingRequestDto indexedFileServingRequestDto = getIndexedFileResourceRequestDtoFromRequest(httpServletRequest);
-                    IsUserAuthorizedToResourceResponseDto responseDto = qpaServerApiClient.getIsAuthorizedToResource(sessionCookie.getValue(), indexedFileServingRequestDto);
-
-                    if (!responseDto.isAuthenticated())
-                        throw new UnAuthorizedException("Cannot authenticate user of the session. You are probably not logged in.");
-
-                    if (!responseDto.isCsrfValid())
-                        throw new UnAuthorizedException("CSRF token is invalid.");
-
-                    if (!responseDto.isAuthorized())
-                        throw new UnAuthorizedException("User of the sent Session is unauthorized for the requested resource: " + indexedFileServingRequestDto.getIndexedFileId());
-
-                    logger.trace("AuthFilter auth is valid for call from a user.");
-                    chain.doFilter(new FileServingHttpServletRequest(httpServletRequest, indexedFileServingRequestDto), response);
-                }
-
-            } catch (UnAuthorizedException e) {
-                logger.trace("Request is unauthorized in AuthFilter: " + e.getMessage());
-                writeErrorResponseBody((HttpServletResponse) response, "Unauthorized: " + e.getMessage(), HttpStatus.FORBIDDEN);
-            } catch (InvalidHttpRequestException e) {
-                writeErrorResponseBody((HttpServletResponse) response, "Invalid request: " + e.getMessage(), HttpStatus.BAD_REQUEST);
-            } catch (Exception e) {
-                logger.debug("Exception thrown while trying to authenticate incoming request!", e);
-                writeErrorResponseBody((HttpServletResponse) response, "Exception thrown while trying to authenticate incoming request!", HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-
+        if (wrappedHttpServletRequest != null) {
+            chain.doFilter(wrappedHttpServletRequest, response);
         }
     }
 
-    private IndexedFileServingRequestDto getIndexedFileResourceRequestDtoFromRequest(HttpServletRequest httpServletRequest) {
+    private HttpServletRequest assertIfRequestProcessingCanBeContinuedAndGetWrappedHttpServletRequest(HttpServletRequest httpServletRequest) {
+        if (authSkipAll) {
+            logger.trace("Skipping auth filter according to app configuration!");
+            //Defaulting to File Serving Request
+            IndexedFileServingRequestDto requestDto = getIndexedFileServingRequestDtoFromRequest(httpServletRequest);
+            WrappedFileServingRequestDto wrappedFileServingRequestDto = WrappedFileServingRequestDto.builder()
+                    .fileAccessType(requestDto.getFileAccessType())
+                    .indexedFileId(requestDto.getIndexedFileId())
+                    .build();
+            return new WrappedFileServingHttpServletRequest(httpServletRequest, wrappedFileServingRequestDto);
+        } else {
+            return authorizeRequestAndGetWrappedHttpServletRequest(httpServletRequest);
+        }
+    }
+
+    private HttpServletRequest authorizeRequestAndGetWrappedHttpServletRequest(HttpServletRequest httpServletRequest) {
+        String authInterServiceHeader = httpServletRequest.getHeader(AUTH_INTER_SERVICE_HEADER_NAME);
+        if (authInterServiceHeader != null && !authInterServiceHeader.isBlank()) {
+            //Authorizing call between services
+            if (!isAuthInterServiceHeaderValid(authInterServiceHeader))
+                throw new UnAuthorizedException("AuthInterService header is invalid.");
+
+            logger.trace("AuthFilter auth is valid for call between services.");
+            return httpServletRequest;
+        } else {
+            WrappedFileServingRequestDto indexedFileServingRequestDto = authorizeCallFromAUser(httpServletRequest);
+            return new WrappedFileServingHttpServletRequest(httpServletRequest, indexedFileServingRequestDto);
+        }
+    }
+
+    private WrappedFileServingRequestDto authorizeCallFromAUser(HttpServletRequest httpServletRequest) {
+        IndexedFileServingRequestDto indexedFileServingRequestDto = getIndexedFileServingRequestDtoFromRequest(httpServletRequest);
+
+        GetIsUserAuthorizedToResourceDto getIsUserAuthorizedToResourceDto = GetIsUserAuthorizedToResourceDto.builder()
+                .httpMethod(indexedFileServingRequestDto.getHttpMethod())
+                .csrfToken(indexedFileServingRequestDto.getCsrfToken())
+                .indexedFileId(indexedFileServingRequestDto.getIndexedFileId())
+                .fileAccessType(indexedFileServingRequestDto.getFileAccessType())
+                .build();
+
+        Cookie sessionCookie = getSessionCookie(httpServletRequest);
+        IsUserAuthorizedToResourceResponseDto isAuthorizedResponseDto = qpaServerApiClient.getIsAuthorizedToResource(sessionCookie.getValue(), getIsUserAuthorizedToResourceDto);
+
+        if (!isAuthorizedResponseDto.isAuthenticated())
+            throw new UnAuthorizedException("Cannot authenticate user of the session. You are probably not logged in.");
+
+        if (!isAuthorizedResponseDto.isCsrfValid())
+            throw new UnAuthorizedException("CSRF token is invalid.");
+
+        if (!isAuthorizedResponseDto.isAuthorized())
+            throw new UnAuthorizedException("User of the sent Session is unauthorized for the requested resource: " + indexedFileServingRequestDto.getIndexedFileId());
+
+        logger.trace("AuthFilter auth is valid for call from a user.");
+        return WrappedFileServingRequestDto.builder()
+                .fileAccessType(indexedFileServingRequestDto.getFileAccessType())
+                .indexedFileId(indexedFileServingRequestDto.getIndexedFileId())
+                .ownerUserId(isAuthorizedResponseDto.getOwnerUserId())
+                .ownerTeamId(isAuthorizedResponseDto.getOwnerTeamId())
+                .build();
+    }
+
+    private IndexedFileServingRequestDto getIndexedFileServingRequestDtoFromRequest(HttpServletRequest httpServletRequest) {
         HttpMethod httpMethod = HttpMethod.resolve(httpServletRequest.getMethod());
         if (httpMethod == null)
             throw new InvalidHttpRequestException("No valid HttpMethod is specified! (" + httpServletRequest.getMethod() + ")");
@@ -128,7 +165,7 @@ public class AuthFilter implements Filter {
             case DELETE:
                 return FileAccessType.DELETE;
             case POST:
-                return FileAccessType.UPLOAD;
+                return FileAccessType.WRITE;
             default:
                 throw new InvalidHttpRequestException("Cannot map given HttpMethod to FileAccessType: " + httpMethod);
         }

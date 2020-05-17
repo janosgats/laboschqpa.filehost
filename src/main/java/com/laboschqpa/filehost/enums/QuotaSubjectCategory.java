@@ -6,14 +6,13 @@ import com.laboschqpa.filehost.exceptions.NotImplementedException;
 import java.util.Arrays;
 import java.util.Optional;
 
-public enum FileAccessType {
-    READ(0),
-    DELETE(1),
-    WRITE(2);
+public enum QuotaSubjectCategory {
+    USER(1),
+    TEAM(2);
 
     private Integer value;
 
-    FileAccessType(Integer value) {
+    QuotaSubjectCategory(Integer value) {
         this.value = value;
     }
 
@@ -22,8 +21,8 @@ public enum FileAccessType {
         return value;
     }
 
-    public static IndexedFileStatus fromValue(Integer value) {
-        Optional<IndexedFileStatus> optional = Arrays.stream(IndexedFileStatus.values())
+    public static QuotaSubjectCategory fromValue(Integer value) {
+        Optional<QuotaSubjectCategory> optional = Arrays.stream(QuotaSubjectCategory.values())
                 .filter(en -> en.getValue().equals(value))
                 .findFirst();
 
