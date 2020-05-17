@@ -1,3 +1,5 @@
+
+
 package com.laboschqpa.filehost.api.service;
 
 import com.laboschqpa.filehost.config.annotation.ExceptionWrappedFileServingClass;
@@ -9,73 +11,43 @@ import com.laboschqpa.filehost.exceptions.fileserving.*;
 import com.laboschqpa.filehost.model.file.IndexedFile;
 import com.laboschqpa.filehost.model.file.StoredFile;
 import com.laboschqpa.filehost.model.file.factory.UploadableFileFactory;
-import com.laboschqpa.filehost.model.file.DownloadableFile;
-import com.laboschqpa.filehost.model.file.factory.DownloadableFileFactory;
 import com.laboschqpa.filehost.model.streamtracking.TrackingInputStream;
 import com.laboschqpa.filehost.model.streamtracking.TrackingInputStreamFactory;
 import com.laboschqpa.filehost.repo.IndexedFileEntityRepository;
 import com.laboschqpa.filehost.util.StoredFileUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.apache.tomcat.util.http.fileupload.FileItemIterator;
 import org.apache.tomcat.util.http.fileupload.FileItemStream;
 import org.apache.tomcat.util.http.fileupload.MultipartStream;
 import org.apache.tomcat.util.http.fileupload.servlet.ServletFileUpload;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.InputStreamResource;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.io.*;
 import java.nio.file.Path;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
+@Log4j2
 @RequiredArgsConstructor
 @Service
 @ExceptionWrappedFileServingClass
-public class FileServingService {
-    private static final Logger logger = LoggerFactory.getLogger(FileServingService.class);
+public class FileUploaderService {
     private static final Integer UPLOADED_FILE_NAME_MAX_LENGTH = 200;
 
+    private final DateTimeFormatter unnamedFileNameDatetimeFormatter = DateTimeFormatter.ofPattern("YYYY-MM-dd_HH-mm-ss").withZone(ZoneId.of("UTC"));
     private final ServletFileUpload servletFileUpload = new ServletFileUpload();
 
     @Value("${filehost.storedfiles.upload.filemaxsize}")
     private Long uploadFileMaxSize;
 
-    private final DownloadableFileFactory downloadableFileFactory;
     private final UploadableFileFactory uploadableFileFactory;
     private final IndexedFileEntityRepository indexedFileEntityRepository;
     private final TrackingInputStreamFactory trackingInputStreamFactory;
     private final StoredFileUtils storedFileUtils;
-
-    public ResponseEntity<Resource> downloadFile(WrappedFileServingHttpServletRequest request) {
-        DownloadableFile downloadableFile = downloadableFileFactory.from(request.getWrappedFileServingRequestDto());
-
-        if (downloadableFile.isAvailable()) {
-            String ifNoneMatchHeaderValue = request.getHeader(HttpHeaders.IF_NONE_MATCH);
-            if (ifNoneMatchHeaderValue != null
-                    && !ifNoneMatchHeaderValue.isBlank()
-                    && ifNoneMatchHeaderValue.equals(downloadableFile.getETag())) {
-                logger.trace("ETag matches. Returning 304 - Not modified");
-                return new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
-            }
-
-            HttpHeaders httpHeaders = new HttpHeaders();
-            httpHeaders.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-            httpHeaders.setContentLength(downloadableFile.getSize());
-            httpHeaders.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + downloadableFile.getOriginalFileName() + "\"");
-
-            TrackingInputStream downloadTrackingStream = trackingInputStreamFactory.createForFileDownload(downloadableFile.getStream());
-            return new ResponseEntity<>(new InputStreamResource(downloadTrackingStream), httpHeaders, HttpStatus.OK);
-        } else {
-            throw new FileIsNotAvailableException("The requested file is not available for download. File status: " + downloadableFile.getStatus());
-        }
-    }
 
     /**
      * Allows uploading exactly one file in a multipart request.
@@ -101,16 +73,13 @@ public class FileServingService {
                 throw new InvalidUploadRequestException("Unexpected multipart form field is present in HTTP body: " + fieldName);
             }
 
-            String uploadedFileName = uploadedFile.getName().trim();
-            if (uploadedFileName.length() > UPLOADED_FILE_NAME_MAX_LENGTH) {
-                uploadedFileName = uploadedFileName.substring(uploadedFileName.length() - UPLOADED_FILE_NAME_MAX_LENGTH);
-            }
+            final String normalizedFileName = normalizeUploadedFileName(uploadedFile);
 
             uploadedFileInputStream = uploadedFile.openStream();
-            logger.debug("Multipart file field {} with fileName {} detected.", fieldName, uploadedFileName);
+            log.debug("Multipart file field {} with fileName {} detected.", fieldName, normalizedFileName);
 
             IndexedFileEntity newlySavedFile = saveNewFile(request.getWrappedFileServingRequestDto(), uploadedFileInputStream,
-                    uploadedFileName, null);//TODO: Get the initial file size approximation from a form field
+                    normalizedFileName, null);//TODO: Get the initial file size approximation from a form field
             handleStreamClose(uploadedFileInputStream, false);
             return newlySavedFile;
         } catch (InvalidUploadRequestException | QuotaExceededException e) {
@@ -120,6 +89,51 @@ public class FileServingService {
             handleStreamClose(uploadedFileInputStream, true);
             throw new FileSavingException("Exception occurred while saving file.", e);
         }
+    }
+
+    private String normalizeUploadedFileName(FileItemStream uploadedFile) {
+        final String originalFileName = uploadedFile.getName();
+
+        if (originalFileName == null || originalFileName.isBlank()) {
+            return generateNameForUnnamedFile();
+        } else {
+            String normalizedFileName = originalFileName;
+
+            if (normalizedFileName.contains("/")) {
+                final String[] split = normalizedFileName.split("/");
+                String buff = split[split.length - 1];
+                if (buff.isBlank()) {
+                    normalizedFileName = normalizedFileName.replace("/", "");
+                } else {
+                    normalizedFileName = buff;
+                }
+            }
+            if (normalizedFileName.contains("\\")) {
+                final String[] split = normalizedFileName.split("\\\\");
+                String buff = split[split.length - 1];
+                if (buff.isBlank()) {
+                    normalizedFileName = normalizedFileName.replace("\\", "");
+                } else {
+                    normalizedFileName = buff;
+                }
+            }
+
+            normalizedFileName = normalizedFileName.trim();
+
+            if (normalizedFileName.length() > UPLOADED_FILE_NAME_MAX_LENGTH) {
+                normalizedFileName = normalizedFileName.substring(normalizedFileName.length() - UPLOADED_FILE_NAME_MAX_LENGTH);
+            }
+
+            if (normalizedFileName.isBlank()) {
+                return generateNameForUnnamedFile();
+            }
+            return normalizedFileName;
+        }
+    }
+
+    private String generateNameForUnnamedFile() {
+        final ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of("UTC"));
+        return String.format("unnamed_%s.file", zonedDateTime.format(unnamedFileNameDatetimeFormatter));
     }
 
     private void handleStreamClose(InputStream uploadedFileInputStream, boolean allowHardClose) {
@@ -135,7 +149,7 @@ public class FileServingService {
                     uploadedFileInputStream.close();
                 }
             } catch (Exception e) {
-                logger.warn("Couldn't close upload stream!", e);
+                log.warn("Couldn't close upload stream!", e);
             }
         }
     }
@@ -150,11 +164,11 @@ public class FileServingService {
             trackingInputStream.setLimit(uploadFileMaxSize);
 
             newUploadableFile.saveFromStream(trackingInputStream, approximateFileSize);
-            logger.debug("New file uploaded and saved: {}", newUploadableFile.getIndexedFileEntity().toString());
+            log.debug("New file uploaded and saved: {}", newUploadableFile.getIndexedFileEntity().toString());
             return newUploadableFile.getIndexedFileEntity();
 
         } catch (StreamLengthLimitExceededException | QuotaExceededException e) {
-            logger.info("File upload was aborted! indexedFileId: {}", getFileIdToPrintOnFailure(newUploadableFile), e);
+            log.info("File upload was aborted! indexedFileId: {}", getFileIdToPrintOnFailure(newUploadableFile), e);
 
             if (newUploadableFile != null) {
                 markFileAs(IndexedFileStatus.ABORTED_BY_FILE_HOST, newUploadableFile);
@@ -162,7 +176,7 @@ public class FileServingService {
             }
             throw e;
         } catch (Exception e) {
-            logger.info("File upload failed! indexedFileId: {}", getFileIdToPrintOnFailure(newUploadableFile), e);
+            log.info("File upload failed! indexedFileId: {}", getFileIdToPrintOnFailure(newUploadableFile), e);
 
             if (newUploadableFile != null) {
                 markFileAs(IndexedFileStatus.FAILED, newUploadableFile);
@@ -184,7 +198,7 @@ public class FileServingService {
             indexedFile.getIndexedFileEntity().setStatus(statusToMarkAs);
             indexedFileEntityRepository.save(indexedFile.getIndexedFileEntity());
         } catch (Exception ex) {
-            logger.error("Exception while marking uploaded file as {}", statusToMarkAs, ex);
+            log.error("Exception while marking uploaded file as {}", statusToMarkAs, ex);
         }
     }
 
@@ -196,11 +210,10 @@ public class FileServingService {
 
                 storedFile.getIndexedFileEntity().setStatus(statusAfterCleanup);
                 indexedFileEntityRepository.save(storedFile.getIndexedFileEntity());
-                logger.trace("File {} cleaned up: {}", storedFile.getIndexedFileEntity().getId(), statusAfterCleanup);
+                log.trace("File {} cleaned up: {}", storedFile.getIndexedFileEntity().getId(), statusAfterCleanup);
             }
         } catch (Exception ex) {
-            logger.error("Couldn't clean up file after QuotaExceededException!", ex);
+            log.error("Couldn't clean up file after QuotaExceededException!", ex);
         }
     }
-
 }

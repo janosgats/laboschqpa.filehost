@@ -1,10 +1,11 @@
 package com.laboschqpa.filehost.api.controller;
 
-import com.laboschqpa.filehost.api.service.FileServingService;
+import com.laboschqpa.filehost.api.service.FileDownloaderService;
+import com.laboschqpa.filehost.api.service.FileUploaderService;
 import com.laboschqpa.filehost.config.filter.WrappedFileServingHttpServletRequest;
 import com.laboschqpa.filehost.enums.FileAccessType;
+import com.laboschqpa.filehost.exceptions.NotImplementedException;
 import lombok.RequiredArgsConstructor;
-import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +16,8 @@ import java.io.*;
 @RestController
 @RequestMapping("/api/file")
 public class FileServingController {
-    private final FileServingService fileServingService;
+    private final FileDownloaderService fileDownloaderService;
+    private final FileUploaderService fileUploaderService;
 
     @GetMapping("/**")
     public ResponseEntity<Resource> getDownload(WrappedFileServingHttpServletRequest request) {
@@ -24,24 +26,26 @@ public class FileServingController {
                     + request.getWrappedFileServingRequestDto().getFileAccessType() + "!");
         }
 
-        return fileServingService.downloadFile(request);
+        return fileDownloaderService.downloadFile(request);
     }
 
     @PostMapping("/**")
-    public Long postUpload(WrappedFileServingHttpServletRequest request) throws IOException, FileUploadException {
+    public Long postUpload(WrappedFileServingHttpServletRequest request) {
         if (request.getWrappedFileServingRequestDto().getFileAccessType() != FileAccessType.WRITE) {
             throw new IllegalStateException("FileAccessType shouldn't be "
                     + request.getWrappedFileServingRequestDto().getFileAccessType() + "!");
         }
 
-        return fileServingService.uploadFile(request).getId();
+        return fileUploaderService.uploadFile(request).getId();
     }
 
     @DeleteMapping("/**")
-    public void deleteDelete(WrappedFileServingHttpServletRequest request) throws IOException, FileUploadException {
+    public void deleteDelete(WrappedFileServingHttpServletRequest request) {
         if (request.getWrappedFileServingRequestDto().getFileAccessType() != FileAccessType.DELETE) {
             throw new IllegalStateException("FileAccessType shouldn't be "
                     + request.getWrappedFileServingRequestDto().getFileAccessType() + "!");
         }
+
+        throw new NotImplementedException("Deleting is not implemented yet.");//TODO: Implement file deleting.
     }
 }
