@@ -1,4 +1,4 @@
-package com.laboschqpa.filehost.model.quota;
+package com.laboschqpa.filehost.repo.dto;
 
 import com.laboschqpa.filehost.enums.QuotaSubjectCategory;
 import com.laboschqpa.filehost.enums.attributeconverter.QuotaSubjectCategoryAttributeConverter;

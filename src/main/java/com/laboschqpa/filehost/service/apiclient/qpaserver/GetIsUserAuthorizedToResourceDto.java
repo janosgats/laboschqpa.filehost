@@ -12,6 +12,8 @@ import org.springframework.http.HttpMethod;
 public class GetIsUserAuthorizedToResourceDto {
     private HttpMethod httpMethod;
     private String csrfToken;
-    private Long indexedFileId;
     private FileAccessType fileAccessType;
+    private Long indexedFileId;
+    private Long indexedFileOwnerUserId;
+    private Long indexedFileOwnerTeamId;
 }

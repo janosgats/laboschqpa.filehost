@@ -4,7 +4,7 @@ import com.laboschqpa.filehost.entity.Quota;
 import com.laboschqpa.filehost.entity.StoredFileEntity;
 import com.laboschqpa.filehost.enums.QuotaSubjectCategory;
 import com.laboschqpa.filehost.exceptions.fileserving.QuotaAllocationException;
-import com.laboschqpa.filehost.model.quota.QuotaResourceUsageJpaDto;
+import com.laboschqpa.filehost.repo.dto.QuotaResourceUsageJpaDto;
 import com.laboschqpa.filehost.model.streamtracking.TrackingInputStream;
 import com.laboschqpa.filehost.repo.QuotaRepository;
 import com.laboschqpa.filehost.repo.StoredFileEntityRepository;

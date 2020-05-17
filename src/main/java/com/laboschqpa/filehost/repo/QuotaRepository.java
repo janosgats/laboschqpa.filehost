@@ -5,7 +5,7 @@ import com.laboschqpa.filehost.enums.IndexedFileStatus;
 import com.laboschqpa.filehost.enums.QuotaSubjectCategory;
 import com.laboschqpa.filehost.enums.attributeconverter.IndexedFileStatusAttributeConverter;
 import com.laboschqpa.filehost.enums.attributeconverter.QuotaSubjectCategoryAttributeConverter;
-import com.laboschqpa.filehost.model.quota.QuotaResourceUsageJpaDto;
+import com.laboschqpa.filehost.repo.dto.QuotaResourceUsageJpaDto;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

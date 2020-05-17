@@ -5,8 +5,13 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.laboschqpa.filehost.api.dto.IndexedFileServingRequestDto;
 import com.laboschqpa.filehost.api.dto.IsUserAuthorizedToResourceResponseDto;
 import com.laboschqpa.filehost.enums.FileAccessType;
+import com.laboschqpa.filehost.enums.IndexedFileStatus;
+import com.laboschqpa.filehost.exceptions.ContentNotFoundApiException;
 import com.laboschqpa.filehost.exceptions.InvalidHttpRequestException;
 import com.laboschqpa.filehost.exceptions.UnAuthorizedException;
+import com.laboschqpa.filehost.exceptions.fileserving.FileIsNotAvailableException;
+import com.laboschqpa.filehost.repo.IndexedFileEntityRepository;
+import com.laboschqpa.filehost.repo.dto.IndexedFileOnlyJpaDto;
 import com.laboschqpa.filehost.service.apiclient.qpaserver.GetIsUserAuthorizedToResourceDto;
 import com.laboschqpa.filehost.service.apiclient.qpaserver.QpaServerApiClient;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +28,19 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Optional;
 
+/**
+ * <ul>
+ * <li>Requests that are directly reaching this service are served as file up/download/delete.
+ * They are auth-ed by calling the {@code Server} and wrapped into a {@link WrappedFileServingHttpServletRequest}.</li>
+ *
+ * <li>Requests that are coming from the {@code Server} are served as normal API requests.
+ * They are auth-ed by verifying the {@code AuthInterService} header value.</li>
+ *
+ * <li>If the {@code AuthInterService} header is present, the request is treated as it comes from the {@code Server}.</li>
+ * </ul>
+ */
 @Component
 @Order(2)
 @RequiredArgsConstructor
@@ -34,6 +51,7 @@ public class AuthFilter implements Filter {
     private boolean authSkipAll;
 
     private final QpaServerApiClient qpaServerApiClient;
+    private final IndexedFileEntityRepository indexedFileEntityRepository;
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
@@ -41,6 +59,14 @@ public class AuthFilter implements Filter {
 
         try {
             wrappedHttpServletRequest = assertIfRequestProcessingCanBeContinuedAndGetWrappedHttpServletRequest((HttpServletRequest) request);
+        } catch (FileIsNotAvailableException e) {
+            logger.trace("FileIsNotAvailableException in AuthFilter: " + e.getMessage());
+            writeErrorResponseBody((HttpServletResponse) response, "Resource is not available: " + e.getMessage(), HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE);
+            wrappedHttpServletRequest = null;
+        } catch (ContentNotFoundApiException e) {
+            logger.trace("ContentNotFoundApiException in AuthFilter: " + e.getMessage());
+            writeErrorResponseBody((HttpServletResponse) response, "Resource not found: " + e.getMessage(), HttpStatus.NOT_FOUND);
+            wrappedHttpServletRequest = null;
         } catch (UnAuthorizedException e) {
             logger.trace("Request is unauthorized in AuthFilter: " + e.getMessage());
             writeErrorResponseBody((HttpServletResponse) response, "Unauthorized: " + e.getMessage(), HttpStatus.FORBIDDEN);
@@ -62,13 +88,8 @@ public class AuthFilter implements Filter {
     private HttpServletRequest assertIfRequestProcessingCanBeContinuedAndGetWrappedHttpServletRequest(HttpServletRequest httpServletRequest) {
         if (authSkipAll) {
             logger.trace("Skipping auth filter according to app configuration!");
-            //Defaulting to File Serving Request
-            IndexedFileServingRequestDto requestDto = getIndexedFileServingRequestDtoFromRequest(httpServletRequest);
-            WrappedFileServingRequestDto wrappedFileServingRequestDto = WrappedFileServingRequestDto.builder()
-                    .fileAccessType(requestDto.getFileAccessType())
-                    .indexedFileId(requestDto.getIndexedFileId())
-                    .build();
-            return new WrappedFileServingHttpServletRequest(httpServletRequest, wrappedFileServingRequestDto);
+            //Defaulting to normal API request
+            return httpServletRequest;
         } else {
             return authorizeRequestAndGetWrappedHttpServletRequest(httpServletRequest);
         }
@@ -78,30 +99,53 @@ public class AuthFilter implements Filter {
         String authInterServiceHeader = httpServletRequest.getHeader(AUTH_INTER_SERVICE_HEADER_NAME);
         if (authInterServiceHeader != null && !authInterServiceHeader.isBlank()) {
             //Authorizing call between services
-            if (!isAuthInterServiceHeaderValid(authInterServiceHeader))
+            if (isAuthInterServiceHeaderValid(authInterServiceHeader)) {
+                logger.trace("AuthFilter auth is valid for call between services.");
+                return httpServletRequest;
+            } else {
                 throw new UnAuthorizedException("AuthInterService header is invalid.");
-
-            logger.trace("AuthFilter auth is valid for call between services.");
-            return httpServletRequest;
+            }
         } else {
-            WrappedFileServingRequestDto indexedFileServingRequestDto = authorizeCallFromAUser(httpServletRequest);
-            return new WrappedFileServingHttpServletRequest(httpServletRequest, indexedFileServingRequestDto);
+            //Authorizing external call
+            WrappedFileServingRequestDto wrappedFileServingRequestDto = authorizeCallFromAUser(httpServletRequest);
+            return new WrappedFileServingHttpServletRequest(httpServletRequest, wrappedFileServingRequestDto);
         }
     }
 
     private WrappedFileServingRequestDto authorizeCallFromAUser(HttpServletRequest httpServletRequest) {
-        IndexedFileServingRequestDto indexedFileServingRequestDto = getIndexedFileServingRequestDtoFromRequest(httpServletRequest);
+        final IndexedFileServingRequestDto indexedFileServingRequestDto = getIndexedFileServingRequestDtoFromRequest(httpServletRequest);
 
-        GetIsUserAuthorizedToResourceDto getIsUserAuthorizedToResourceDto = GetIsUserAuthorizedToResourceDto.builder()
+        final GetIsUserAuthorizedToResourceDto getIsUserAuthorizedToResourceDto = GetIsUserAuthorizedToResourceDto.builder()
                 .httpMethod(indexedFileServingRequestDto.getHttpMethod())
                 .csrfToken(indexedFileServingRequestDto.getCsrfToken())
                 .indexedFileId(indexedFileServingRequestDto.getIndexedFileId())
                 .fileAccessType(indexedFileServingRequestDto.getFileAccessType())
                 .build();
 
-        Cookie sessionCookie = getSessionCookie(httpServletRequest);
-        IsUserAuthorizedToResourceResponseDto isAuthorizedResponseDto = qpaServerApiClient.getIsAuthorizedToResource(sessionCookie.getValue(), getIsUserAuthorizedToResourceDto);
+        if (indexedFileServingRequestDto.getFileAccessType() == FileAccessType.READ
+                || indexedFileServingRequestDto.getFileAccessType() == FileAccessType.DELETE) {
+            final IndexedFileOnlyJpaDto indexedFileOnlyJpaDto = getValidExistingAvailableIndexedFileOnlyJpaDto(indexedFileServingRequestDto);
+            getIsUserAuthorizedToResourceDto.setIndexedFileOwnerUserId(indexedFileOnlyJpaDto.getOwnerUserId());
+            getIsUserAuthorizedToResourceDto.setIndexedFileOwnerTeamId(indexedFileOnlyJpaDto.getOwnerTeamId());
+        }
 
+        final Cookie sessionCookie = getSessionCookie(httpServletRequest);
+        final IsUserAuthorizedToResourceResponseDto isAuthorizedResponseDto
+                = qpaServerApiClient.getIsAuthorizedToResource(sessionCookie.getValue(), getIsUserAuthorizedToResourceDto);
+
+        assertIsAuthorizedToResourceResponseIsPositive(isAuthorizedResponseDto, indexedFileServingRequestDto);
+
+        logger.trace("AuthFilter auth is valid for external call.");
+        return WrappedFileServingRequestDto.builder()
+                .fileAccessType(indexedFileServingRequestDto.getFileAccessType())
+                .indexedFileId(indexedFileServingRequestDto.getIndexedFileId())
+                .loggedInUserId(isAuthorizedResponseDto.getLoggedInUserId())
+                .loggedInUserTeamId(isAuthorizedResponseDto.getLoggedInUserTeamId())
+                .build();
+    }
+
+    private void assertIsAuthorizedToResourceResponseIsPositive(IsUserAuthorizedToResourceResponseDto isAuthorizedResponseDto,
+                                                                IndexedFileServingRequestDto indexedFileServingRequestDto) {
         if (!isAuthorizedResponseDto.isAuthenticated())
             throw new UnAuthorizedException("Cannot authenticate user of the session. You are probably not logged in.");
 
@@ -110,17 +154,26 @@ public class AuthFilter implements Filter {
 
         if (!isAuthorizedResponseDto.isAuthorized())
             throw new UnAuthorizedException("User of the sent Session is unauthorized for the requested resource: " + indexedFileServingRequestDto.getIndexedFileId());
-
-        logger.trace("AuthFilter auth is valid for call from a user.");
-        return WrappedFileServingRequestDto.builder()
-                .fileAccessType(indexedFileServingRequestDto.getFileAccessType())
-                .indexedFileId(indexedFileServingRequestDto.getIndexedFileId())
-                .ownerUserId(isAuthorizedResponseDto.getOwnerUserId())
-                .ownerTeamId(isAuthorizedResponseDto.getOwnerTeamId())
-                .build();
     }
 
-    private IndexedFileServingRequestDto getIndexedFileServingRequestDtoFromRequest(HttpServletRequest httpServletRequest) {
+    private IndexedFileOnlyJpaDto getValidExistingAvailableIndexedFileOnlyJpaDto(IndexedFileServingRequestDto indexedFileServingRequestDto) {
+        Optional<IndexedFileOnlyJpaDto> indexedFileOnlyJpaDtoOptional
+                = indexedFileEntityRepository.findOnlyFromIndexedFileTableById(indexedFileServingRequestDto.getIndexedFileId());
+
+        if (indexedFileOnlyJpaDtoOptional.isEmpty()) {
+            throw new ContentNotFoundApiException("File with id "
+                    + indexedFileServingRequestDto.getIndexedFileId() + " does not exist!");
+        }
+        IndexedFileOnlyJpaDto indexedFileOnlyJpaDto = indexedFileOnlyJpaDtoOptional.get();
+        if (indexedFileOnlyJpaDto.getStatus() != IndexedFileStatus.AVAILABLE) {
+            throw new FileIsNotAvailableException("File with id "
+                    + indexedFileServingRequestDto.getIndexedFileId() + " is found, but it's not available!");
+        }
+        return indexedFileOnlyJpaDto;
+    }
+
+    private IndexedFileServingRequestDto getIndexedFileServingRequestDtoFromRequest(HttpServletRequest
+                                                                                            httpServletRequest) {
         HttpMethod httpMethod = HttpMethod.resolve(httpServletRequest.getMethod());
         if (httpMethod == null)
             throw new InvalidHttpRequestException("No valid HttpMethod is specified! (" + httpServletRequest.getMethod() + ")");
@@ -187,7 +240,8 @@ public class AuthFilter implements Filter {
         return authHeader.equals(System.getProperty("auth.interservice.key"));
     }
 
-    private void writeErrorResponseBody(HttpServletResponse httpServletResponse, String errorMessage, HttpStatus httpStatus) throws IOException {
+    private void writeErrorResponseBody(HttpServletResponse httpServletResponse, String errorMessage, HttpStatus
+            httpStatus) throws IOException {
         ObjectNode responseObjectNode = new ObjectNode(JsonNodeFactory.instance);
         responseObjectNode.put("error", errorMessage);
         String responseBody = responseObjectNode.toString();

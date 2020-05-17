@@ -34,8 +34,8 @@ public class UploadableFileFactory {
         StoredFileEntity storedFileEntity = StoredFileEntity.builder()
                 .status(IndexedFileStatus.ADDED_TO_DATABASE_INDEX)
                 .originalFileName(originalFileName)
-                .ownerUserId(wrappedFileServingRequestDto.getOwnerUserId())
-                .ownerTeamId(wrappedFileServingRequestDto.getOwnerTeamId())
+                .ownerUserId(wrappedFileServingRequestDto.getLoggedInUserId())
+                .ownerTeamId(wrappedFileServingRequestDto.getLoggedInUserTeamId())
                 .creationTime(Instant.now())
                 .eTag(String.valueOf(System.nanoTime()))
                 .build();

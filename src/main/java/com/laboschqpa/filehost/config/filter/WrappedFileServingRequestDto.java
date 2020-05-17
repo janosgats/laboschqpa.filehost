@@ -11,8 +11,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class WrappedFileServingRequestDto {
-    private Long ownerUserId;
-    private Long ownerTeamId;
+    private Long loggedInUserId;
+    private Long loggedInUserTeamId;
     private Long indexedFileId;
     private FileAccessType fileAccessType;
 }

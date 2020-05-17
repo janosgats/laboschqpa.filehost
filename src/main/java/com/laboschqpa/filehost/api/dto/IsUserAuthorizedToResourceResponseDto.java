@@ -17,7 +17,7 @@ public class IsUserAuthorizedToResourceResponseDto {
     @Builder.Default
     private boolean csrfValid = true;
 
-    private Long ownerUserId;
-    private Long ownerTeamId;
+    private Long loggedInUserId;
+    private Long loggedInUserTeamId;
 }
 
