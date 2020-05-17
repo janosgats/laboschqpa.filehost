@@ -154,6 +154,16 @@ public class AuthFilter implements Filter {
 
         if (!isAuthorizedResponseDto.isAuthorized())
             throw new UnAuthorizedException("User of the sent Session is unauthorized for the requested resource: " + indexedFileServingRequestDto.getIndexedFileId());
+
+        if (isAuthorizedResponseDto.getLoggedInUserId() == null || isAuthorizedResponseDto.getLoggedInUserId() < 1) {
+            logger.error("loggedInUserId ({}) is invalid in response got from Server!", isAuthorizedResponseDto.getLoggedInUserId());
+            throw new RuntimeException("loggedInUserId is invalid in response got from Server!");
+        }
+
+        if (isAuthorizedResponseDto.getLoggedInUserTeamId() == null || isAuthorizedResponseDto.getLoggedInUserTeamId() < 1) {
+            logger.error("loggedInUserTeamId ({}) is invalid in response got from Server!", isAuthorizedResponseDto.getLoggedInUserTeamId());
+            throw new RuntimeException("loggedInUserTeamId is invalid in response got from Server!");
+        }
     }
 
     private IndexedFileOnlyJpaDto getValidExistingAvailableIndexedFileOnlyJpaDto(IndexedFileServingRequestDto indexedFileServingRequestDto) {
