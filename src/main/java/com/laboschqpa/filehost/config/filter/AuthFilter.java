@@ -58,7 +58,7 @@ public class AuthFilter implements Filter {
         HttpServletRequest wrappedHttpServletRequest;
 
         try {
-            wrappedHttpServletRequest = assertIfRequestProcessingCanBeContinuedAndGetWrappedHttpServletRequest((HttpServletRequest) request);
+            wrappedHttpServletRequest = assertIfRequestProcessingCanBeContinued_andGetWrappedHttpServletRequest((HttpServletRequest) request);
         } catch (FileIsNotAvailableException e) {
             logger.trace("FileIsNotAvailableException in AuthFilter: " + e.getMessage());
             writeErrorResponseBody((HttpServletResponse) response, "Resource is not available: " + e.getMessage(), HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE);
@@ -85,7 +85,7 @@ public class AuthFilter implements Filter {
         }
     }
 
-    private HttpServletRequest assertIfRequestProcessingCanBeContinuedAndGetWrappedHttpServletRequest(HttpServletRequest httpServletRequest) {
+    private HttpServletRequest assertIfRequestProcessingCanBeContinued_andGetWrappedHttpServletRequest(HttpServletRequest httpServletRequest) {
         if (authSkipAll) {
             logger.trace("Skipping auth filter according to app configuration!");
             //Defaulting to normal API request
