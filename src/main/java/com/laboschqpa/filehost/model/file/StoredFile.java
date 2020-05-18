@@ -7,33 +7,40 @@ import com.laboschqpa.filehost.exceptions.fileserving.InvalidStoredFileException
 import com.laboschqpa.filehost.model.streamtracking.TrackingInputStream;
 import com.laboschqpa.filehost.service.StoredFileSaver;
 import com.laboschqpa.filehost.util.StoredFileUtils;
+import lombok.extern.log4j.Log4j2;
+import org.apache.tika.detect.Detector;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 
 import java.io.*;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Objects;
 
+@Log4j2
 public class StoredFile implements DownloadableFile, DeletableFile, UploadableFile {
     private final StoredFileUtils storedFileUtils;
     private final StoredFileEntity storedFileEntity;
     private final StoredFileSaver storedFileSaver;
-
+    private final Detector tikaDetector;
     private File file;
 
     private FileInputStream readingStream;
 
 
-    public StoredFile(StoredFileUtils storedFileUtils, StoredFileEntity storedFileEntity, StoredFileSaver storedFileSaver) {
-        this(storedFileUtils, storedFileEntity, storedFileSaver, true);
+    public StoredFile(StoredFileUtils storedFileUtils, StoredFileEntity storedFileEntity, StoredFileSaver storedFileSaver, Detector tikaDetector) {
+        this(storedFileUtils, storedFileEntity, storedFileSaver, tikaDetector, true);
     }
 
-    public StoredFile(StoredFileUtils storedFileUtils, StoredFileEntity storedFileEntity, StoredFileSaver storedFileSaver, boolean assertFileCurrentlyExists) {
+    public StoredFile(StoredFileUtils storedFileUtils, StoredFileEntity storedFileEntity, StoredFileSaver storedFileSaver, Detector tikaDetector, boolean assertFileCurrentlyExists) {
         Objects.requireNonNull(storedFileUtils);
         Objects.requireNonNull(storedFileEntity);
 
         this.storedFileUtils = storedFileUtils;
         this.storedFileEntity = storedFileEntity;
         this.storedFileSaver = storedFileSaver;
+        this.tikaDetector = tikaDetector;
 
         file = new File(storedFileUtils.getFullPathFromStoredFileEntityPath(storedFileEntity.getPath()));
 
@@ -54,6 +61,18 @@ public class StoredFile implements DownloadableFile, DeletableFile, UploadableFi
         storedFileUtils.saveStoredFileEntity(storedFileEntity);
 
         storedFileSaver.writeFromStream(fileUploadingInputStream, file, storedFileEntity, approximateFileSize);
+
+        try (TikaInputStream tikaInputStream = TikaInputStream.get(Path.of(file.getAbsolutePath()))) {
+            Metadata metadata = new Metadata();
+            metadata.add(Metadata.RESOURCE_NAME_KEY, storedFileEntity.getOriginalFileName());
+            MediaType detectedMediaType = tikaDetector.detect(tikaInputStream, metadata);
+
+            log.trace("Detected MIME type: {}", detectedMediaType.toString());
+
+            storedFileEntity.setMimeType(detectedMediaType.getType() + "/" + detectedMediaType.getSubtype());
+        } catch (Exception e) {
+            log.error("Exception during Apache Tika mime type detection!", e);
+        }
 
         storedFileEntity.setStatus(IndexedFileStatus.AVAILABLE);
         storedFileUtils.saveStoredFileEntity(storedFileEntity);
@@ -96,6 +115,11 @@ public class StoredFile implements DownloadableFile, DeletableFile, UploadableFi
     @Override
     public String getOriginalFileName() {
         return storedFileEntity.getOriginalFileName();
+    }
+
+    @Override
+    public String getMimeType() {
+        return storedFileEntity.getMimeType();
     }
 
     @Override

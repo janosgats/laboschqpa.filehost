@@ -19,7 +19,8 @@ import javax.persistence.*;
                 @Index(columnList = "owner_team_id", name = "owner_team"),
                 @Index(columnList = "owner_user_id, owner_team_id", name = "owner_user__owner_team"),
                 @Index(columnList = "status, owner_team_id", name = "status__owner_team"),
-                @Index(columnList = "status, owner_user_id, owner_team_id", name = "status__owner_user__owner_team")
+                @Index(columnList = "status, owner_user_id, owner_team_id", name = "status__owner_user__owner_team"),
+                @Index(columnList = "mime_type", name = "mime_type"),
         }
 )
 @Inheritance(strategy = InheritanceType.JOINED)
@@ -44,9 +45,12 @@ public class IndexedFileEntity {
     @Column(name = "status", nullable = false)
     private IndexedFileStatus status;
 
-    @Column(name = "owner_user_id")
+    @Column(name = "owner_user_id", nullable = false)
     private Long ownerUserId;
 
-    @Column(name = "owner_team_id")
+    @Column(name = "owner_team_id", nullable = false)
     private Long ownerTeamId;
+
+    @Column(name = "mime_type")
+    private String mimeType;
 }

@@ -8,6 +8,7 @@ import com.laboschqpa.filehost.repo.StoredFileEntityRepository;
 import com.laboschqpa.filehost.service.QuotaAllocatingStoredFileSaver;
 import com.laboschqpa.filehost.util.StoredFileUtils;
 import lombok.RequiredArgsConstructor;
+import org.apache.tika.detect.Detector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -22,12 +23,13 @@ public class UploadableFileFactory {
     private final StoredFileUtils storedFileUtils;
     private final StoredFileEntityRepository storedFileEntityRepository;
     private final QuotaAllocatingStoredFileSaver quotaAllocatingStoredFileSaver;
+    private final Detector tikaDetector;
 
     public StoredFile fromFileUploadRequest(WrappedFileServingRequestDto wrappedFileServingRequestDto, String originalFileName) {
         StoredFileEntity storedFileEntity = createStoredFileEntityForUploadedFile(wrappedFileServingRequestDto, originalFileName);
         logger.trace("Created storedFileEntity for file upload: {}", storedFileEntity);
 
-        return new StoredFile(storedFileUtils, storedFileEntity, quotaAllocatingStoredFileSaver, false);
+        return new StoredFile(storedFileUtils, storedFileEntity, quotaAllocatingStoredFileSaver, tikaDetector, false);
     }
 
     private StoredFileEntity createStoredFileEntityForUploadedFile(WrappedFileServingRequestDto wrappedFileServingRequestDto, String originalFileName) {

@@ -19,4 +19,6 @@ public interface IndexedFileOnlyJpaDto {
     Long getOwnerUserId();
 
     Long getOwnerTeamId();
+
+    String getMimeType();
 }

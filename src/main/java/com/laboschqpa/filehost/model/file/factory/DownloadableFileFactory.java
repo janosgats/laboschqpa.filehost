@@ -21,7 +21,7 @@ public class DownloadableFileFactory {
     private final StoredFileUtils storedFileUtils;
 
     public StoredFile from(StoredFileEntity storedFileEntity) {
-        return new StoredFile(storedFileUtils, storedFileEntity, null);
+        return new StoredFile(storedFileUtils, storedFileEntity, null, null);
     }
 
     public DownloadableFile from(WrappedFileServingRequestDto wrappedFileServingRequestDto) {

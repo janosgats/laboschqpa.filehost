@@ -43,4 +43,11 @@ public interface DownloadableFile extends IndexedFile {
      * @return {@code Null}, if original file name is unavailable.
      */
     String getOriginalFileName();
+
+    /**
+     * Gets the file's MIME type if possible.
+     *
+     * @return {@code Null}, if MIME type is unknown.
+     */
+    String getMimeType();
 }
