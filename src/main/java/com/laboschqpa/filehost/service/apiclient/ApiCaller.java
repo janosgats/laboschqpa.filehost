@@ -1,7 +1,7 @@
 package com.laboschqpa.filehost.service.apiclient;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.laboschqpa.filehost.exceptions.ApiClientException;
+import com.laboschqpa.filehost.exceptions.apiclient.ApiClientException;
 import com.laboschqpa.filehost.exceptions.apiclient.ResponseCodeIsNotSuccessApiClientException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

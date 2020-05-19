@@ -1,7 +1,7 @@
 package com.laboschqpa.filehost.config.advice;
 
-import com.laboschqpa.filehost.exceptions.ApiClientException;
 import com.laboschqpa.filehost.exceptions.NotImplementedException;
+import com.laboschqpa.filehost.exceptions.apiclient.ApiClientException;
 import com.laboschqpa.filehost.exceptions.fileserving.FileServingException;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;

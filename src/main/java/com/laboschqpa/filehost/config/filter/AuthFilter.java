@@ -28,6 +28,8 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Optional;
 
 /**
@@ -182,8 +184,7 @@ public class AuthFilter implements Filter {
         return indexedFileOnlyJpaDto;
     }
 
-    private IndexedFileServingRequestDto getIndexedFileServingRequestDtoFromRequest(HttpServletRequest
-                                                                                            httpServletRequest) {
+    private IndexedFileServingRequestDto getIndexedFileServingRequestDtoFromRequest(HttpServletRequest httpServletRequest) {
         HttpMethod httpMethod = HttpMethod.resolve(httpServletRequest.getMethod());
         if (httpMethod == null)
             throw new InvalidHttpRequestException("No valid HttpMethod is specified! (" + httpServletRequest.getMethod() + ")");
@@ -205,16 +206,24 @@ public class AuthFilter implements Filter {
     }
 
     private Long getRequestedIndexedFileId(HttpServletRequest httpServletRequest) {
-        String[] resourceIdParams = httpServletRequest.getParameterValues("indexedFileId");
-        if (resourceIdParams == null)
+        HashSet<String> indexedFileIdParamValues = getHashSetOfParamValues(httpServletRequest, "id", "indexedFileId");
+
+        if (indexedFileIdParamValues.size() > 1)
+            throw new InvalidHttpRequestException("indexedFileId is specified multiple times with different values.");
+        else if (indexedFileIdParamValues.size() == 0)
             throw new InvalidHttpRequestException("No indexedFileId parameter is present.");
 
-        if (resourceIdParams.length > 1)
-            throw new InvalidHttpRequestException("Multi value is not allowed for indexedFileId parameter.");
-        else if (resourceIdParams.length == 0)
-            throw new InvalidHttpRequestException("No indexedFileId parameter is present.");
+        return Long.parseLong(indexedFileIdParamValues.iterator().next());
+    }
 
-        return Long.parseLong(resourceIdParams[0]);
+    private HashSet<String> getHashSetOfParamValues(HttpServletRequest httpServletRequest, String... paramAliases) {
+        final HashSet<String> values = new HashSet<>();
+        for (String name : paramAliases) {
+            final String[] buffParams = httpServletRequest.getParameterValues(name);
+            if (buffParams != null)
+                values.addAll(Arrays.asList(buffParams));
+        }
+        return values;
     }
 
     private FileAccessType getRequestedFileAccessType(HttpServletRequest httpServletRequest) {
