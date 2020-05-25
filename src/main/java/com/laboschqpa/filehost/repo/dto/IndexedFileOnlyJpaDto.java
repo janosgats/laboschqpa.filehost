@@ -3,6 +3,8 @@ package com.laboschqpa.filehost.repo.dto;
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
 import com.laboschqpa.filehost.enums.attributeconverter.IndexedFileStatusAttributeConverter;
 
+import java.time.Instant;
+
 public interface IndexedFileOnlyJpaDto {
     IndexedFileStatusAttributeConverter INDEXED_FILE_STATUS_ATTRIBUTE_CONVERTER = new IndexedFileStatusAttributeConverter();
 
@@ -19,6 +21,8 @@ public interface IndexedFileOnlyJpaDto {
     Long getOwnerUserId();
 
     Long getOwnerTeamId();
+
+    Instant getCreationTime();
 
     String getMimeType();
 }

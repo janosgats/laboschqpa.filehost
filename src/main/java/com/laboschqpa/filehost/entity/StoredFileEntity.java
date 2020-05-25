@@ -13,8 +13,7 @@ import java.time.Instant;
 @Entity
 @Table(name = "stored_file",
         indexes = {
-                @Index(columnList = "size", name = "size"),
-                @Index(columnList = "creation_time", name = "creation_time")
+                @Index(columnList = "size", name = "size")
         }
 )
 @DiscriminatorValue("1")
@@ -22,10 +21,9 @@ public class StoredFileEntity extends IndexedFileEntity {
     @Builder
     public StoredFileEntity(IndexedFileStatus status, Long ownerUserId, Long ownerTeamId, final String path, final Long size, final Instant creationTime,
                             final String eTag, final String originalFileName) {
-        super(status, ownerUserId, ownerTeamId);
+        super(status, ownerUserId, ownerTeamId, creationTime);
         this.path = path;
         this.size = size;
-        this.creationTime = creationTime;
         this.eTag = eTag;
         this.originalFileName = originalFileName;
     }
@@ -35,9 +33,6 @@ public class StoredFileEntity extends IndexedFileEntity {
 
     @JoinColumn(name = "size")
     private Long size;//Size in Bytes
-
-    @Column(name = "creation_time", nullable = false)
-    private Instant creationTime;
 
     @Column(name = "e_tag")
     private String eTag;

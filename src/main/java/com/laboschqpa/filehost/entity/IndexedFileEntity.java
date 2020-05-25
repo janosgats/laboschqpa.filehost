@@ -5,6 +5,7 @@ import com.laboschqpa.filehost.enums.attributeconverter.IndexedFileStatusAttribu
 import lombok.*;
 
 import javax.persistence.*;
+import java.time.Instant;
 
 /**
  * Every file/stream that's served by the FileHost webservice has to be indexed by adding it to this entity.
@@ -16,11 +17,12 @@ import javax.persistence.*;
 @Entity
 @Table(name = "indexed_file",
         indexes = {
-                @Index(columnList = "owner_team_id", name = "owner_team"),
-                @Index(columnList = "owner_user_id, owner_team_id", name = "owner_user__owner_team"),
-                @Index(columnList = "status, owner_team_id", name = "status__owner_team"),
-                @Index(columnList = "status, owner_user_id, owner_team_id", name = "status__owner_user__owner_team"),
-                @Index(columnList = "mime_type", name = "mime_type"),
+                @Index(columnList = "owner_team_id, creation_time", name = "owner_team__creation_time"),
+                @Index(columnList = "owner_user_id, owner_team_id, creation_time", name = "owner_user__owner_team__creation_time"),
+                @Index(columnList = "status, owner_team_id, creation_time", name = "status__owner_team__creation_time"),
+                @Index(columnList = "status, owner_user_id, owner_team_id, creation_time", name = "status__owner_user__owner_team__creation_time"),
+                @Index(columnList = "mime_type, creation_time", name = "mime_type__creation_time"),
+                @Index(columnList = "creation_time", name = "creation_time")
         }
 )
 @Inheritance(strategy = InheritanceType.JOINED)
@@ -30,10 +32,11 @@ import javax.persistence.*;
         columnDefinition = "TINYINT"
 )
 public class IndexedFileEntity {
-    public IndexedFileEntity(IndexedFileStatus status, Long ownerUserId, Long ownerTeamId) {
+    public IndexedFileEntity(IndexedFileStatus status, Long ownerUserId, Long ownerTeamId, Instant creationTime) {
         this.status = status;
         this.ownerUserId = ownerUserId;
         this.ownerTeamId = ownerTeamId;
+        this.creationTime = creationTime;
     }
 
     @Id
@@ -50,6 +53,9 @@ public class IndexedFileEntity {
 
     @Column(name = "owner_team_id", nullable = false)
     private Long ownerTeamId;
+
+    @Column(name = "creation_time", nullable = false)
+    private Instant creationTime;
 
     @Column(name = "mime_type")
     private String mimeType;

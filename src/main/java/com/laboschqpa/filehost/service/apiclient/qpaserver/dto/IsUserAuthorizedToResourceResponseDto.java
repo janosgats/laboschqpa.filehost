@@ -1,4 +1,4 @@
-package com.laboschqpa.filehost.api.dto;
+package com.laboschqpa.filehost.service.apiclient.qpaserver.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,7 +1,7 @@
 package com.laboschqpa.filehost.api.service;
 
 import com.laboschqpa.filehost.config.annotation.ExceptionWrappedFileServingClass;
-import com.laboschqpa.filehost.config.filter.WrappedFileServingHttpServletRequest;
+import com.laboschqpa.filehost.config.filter.AuthWrappedHttpServletRequest;
 import com.laboschqpa.filehost.exceptions.fileserving.*;
 import com.laboschqpa.filehost.model.file.DownloadableFile;
 import com.laboschqpa.filehost.model.file.factory.DownloadableFileFactory;
@@ -27,7 +27,7 @@ public class FileDownloaderService {
     private final DownloadableFileFactory downloadableFileFactory;
     private final TrackingInputStreamFactory trackingInputStreamFactory;
 
-    public ResponseEntity<Resource> downloadFile(WrappedFileServingHttpServletRequest request) {
+    public ResponseEntity<Resource> downloadFile(AuthWrappedHttpServletRequest request) {
         DownloadableFile downloadableFile = downloadableFileFactory.from(request.getWrappedFileServingRequestDto());
 
         if (downloadableFile.isAvailable()) {

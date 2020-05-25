@@ -2,15 +2,13 @@ package com.laboschqpa.filehost.api.controller;
 
 import com.laboschqpa.filehost.api.service.FileDownloaderService;
 import com.laboschqpa.filehost.api.service.FileUploaderService;
-import com.laboschqpa.filehost.config.filter.WrappedFileServingHttpServletRequest;
+import com.laboschqpa.filehost.config.filter.AuthWrappedHttpServletRequest;
 import com.laboschqpa.filehost.enums.FileAccessType;
 import com.laboschqpa.filehost.exceptions.NotImplementedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.io.*;
 
 @RequiredArgsConstructor
 @RestController
@@ -20,7 +18,7 @@ public class FileServingController {
     private final FileUploaderService fileUploaderService;
 
     @GetMapping("/**")
-    public ResponseEntity<Resource> getDownload(WrappedFileServingHttpServletRequest request) {
+    public ResponseEntity<Resource> getDownload(AuthWrappedHttpServletRequest request) {
         if (request.getWrappedFileServingRequestDto().getFileAccessType() != FileAccessType.READ) {
             throw new IllegalStateException("FileAccessType shouldn't be "
                     + request.getWrappedFileServingRequestDto().getFileAccessType() + "!");
@@ -30,7 +28,7 @@ public class FileServingController {
     }
 
     @PostMapping("/**")
-    public Long postUpload(WrappedFileServingHttpServletRequest request) {
+    public Long postUpload(AuthWrappedHttpServletRequest request) {
         if (request.getWrappedFileServingRequestDto().getFileAccessType() != FileAccessType.WRITE) {
             throw new IllegalStateException("FileAccessType shouldn't be "
                     + request.getWrappedFileServingRequestDto().getFileAccessType() + "!");
@@ -40,7 +38,7 @@ public class FileServingController {
     }
 
     @DeleteMapping("/**")
-    public void deleteDelete(WrappedFileServingHttpServletRequest request) {
+    public void deleteDelete(AuthWrappedHttpServletRequest request) {
         if (request.getWrappedFileServingRequestDto().getFileAccessType() != FileAccessType.DELETE) {
             throw new IllegalStateException("FileAccessType shouldn't be "
                     + request.getWrappedFileServingRequestDto().getFileAccessType() + "!");

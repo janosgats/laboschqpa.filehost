@@ -1,6 +1,7 @@
 package com.laboschqpa.filehost.repo;
 
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
+import com.laboschqpa.filehost.repo.custom.ExtendedIndexedFileEntityRepository;
 import com.laboschqpa.filehost.repo.dto.IndexedFileOnlyJpaDto;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -8,9 +9,9 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
-public interface IndexedFileEntityRepository extends JpaRepository<IndexedFileEntity, Long> {
+public interface IndexedFileEntityRepository extends JpaRepository<IndexedFileEntity, Long>, ExtendedIndexedFileEntityRepository {
 
-    @Query(value = "select id as id, dtype as dType, status as statusVal, owner_user_id as ownerUserId, owner_team_id as ownerTeamId, mime_type as mimeType " +
+    @Query(value = "select id as id, dtype as dType, status as statusVal, owner_user_id as ownerUserId, owner_team_id as ownerTeamId, creation_time as creationTime, mime_type as mimeType " +
             " from indexed_file " +
             " where id = :id",
             nativeQuery = true)

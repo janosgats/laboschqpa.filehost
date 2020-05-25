@@ -1,10 +1,11 @@
 package com.laboschqpa.filehost.service.apiclient.qpaserver;
 
-import com.laboschqpa.filehost.api.dto.IsUserAuthorizedToResourceResponseDto;
 import com.laboschqpa.filehost.config.annotation.ExceptionWrappedApiClient;
 import com.laboschqpa.filehost.exceptions.apiclient.ResponseCodeIsNotSuccessApiClientException;
 import com.laboschqpa.filehost.service.apiclient.AbstractApiClient;
 import com.laboschqpa.filehost.service.apiclient.ApiCallerFactory;
+import com.laboschqpa.filehost.service.apiclient.qpaserver.dto.IsUserAuthorizedToResourceRequestDto;
+import com.laboschqpa.filehost.service.apiclient.qpaserver.dto.IsUserAuthorizedToResourceResponseDto;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -27,7 +28,7 @@ public class QpaServerApiClientImpl extends AbstractApiClient implements QpaServ
     }
 
     @Override
-    public IsUserAuthorizedToResourceResponseDto getIsAuthorizedToResource(String sessionCookieValue, GetIsUserAuthorizedToResourceDto getIsUserAuthorizedToResourceDto) {
+    public IsUserAuthorizedToResourceResponseDto getIsAuthorizedToResource(String sessionCookieValue, IsUserAuthorizedToResourceRequestDto isUserAuthorizedToResourceRequestDto) {
         LinkedMultiValueMap<String, String> cookies = new LinkedMultiValueMap<>();
         cookies.add("SESSION", sessionCookieValue);
 
@@ -40,7 +41,7 @@ public class QpaServerApiClientImpl extends AbstractApiClient implements QpaServ
                     isAuthorizedToResourceUri,
                     HttpMethod.GET,
                     null,
-                    BodyInserters.fromValue(getIsUserAuthorizedToResourceDto),
+                    BodyInserters.fromValue(isUserAuthorizedToResourceRequestDto),
                     httpHeaders,
                     cookies,
                     false

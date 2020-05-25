@@ -3,7 +3,7 @@
 package com.laboschqpa.filehost.api.service;
 
 import com.laboschqpa.filehost.config.annotation.ExceptionWrappedFileServingClass;
-import com.laboschqpa.filehost.config.filter.WrappedFileServingHttpServletRequest;
+import com.laboschqpa.filehost.config.filter.AuthWrappedHttpServletRequest;
 import com.laboschqpa.filehost.config.filter.WrappedFileServingRequestDto;
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
@@ -56,7 +56,7 @@ public class FileUploaderService {
      *
      * @return {@code indexedFileEntity} of the newly uploaded file
      */
-    public IndexedFileEntity uploadFile(WrappedFileServingHttpServletRequest request) {
+    public IndexedFileEntity uploadFile(AuthWrappedHttpServletRequest request) {
         if (!StringUtils.startsWithIgnoreCase(request.getContentType(), "multipart/")) {
             throw new InvalidUploadRequestException("The request is not a multipart request.");
         }
