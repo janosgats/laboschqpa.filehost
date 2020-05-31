@@ -29,7 +29,7 @@ public class FileServingController {
 
     @PostMapping("/**")
     public Long postUpload(AuthWrappedHttpServletRequest request) {
-        if (request.getWrappedFileServingRequestDto().getFileAccessType() != FileAccessType.WRITE) {
+        if (request.getWrappedFileServingRequestDto().getFileAccessType() != FileAccessType.CREATE_NEW) {
             throw new IllegalStateException("FileAccessType shouldn't be "
                     + request.getWrappedFileServingRequestDto().getFileAccessType() + "!");
         }
