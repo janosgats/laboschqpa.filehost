@@ -21,7 +21,7 @@ public interface QuotaRepository extends JpaRepository<Quota, Long> {
             "from (select owner_user_id as subjectId, :categoryEnumVal_USER as subjectCategoryVal, coalesce(sum(stored_file.size), 0) as usedBytes " +
             "      from stored_file " +
             "               join indexed_file on stored_file.id = indexed_file.id " +
-            "      where status in (:statusEnumVal_ADDED_TO_DATABASE_INDEX, :statusEnumVal_UPLOADING, :statusEnumVal_UPLOADED, :statusEnumVal_AVAILABLE, :statusEnumVal_FAILED, :statusEnumVal_ABORTED_BY_FILE_HOST) " +
+            "      where status in (:statusEnumVal_ADDED_TO_DATABASE_INDEX, :statusEnumVal_UPLOADING, :statusEnumVal_UPLOADED, :statusEnumVal_AVAILABLE, :statusEnumVal_FAILED, :statusEnumVal_ABORTED_BY_FILE_HOST, :statusEnumVal_FAILED_DURING_DELETION) " +
             "        and owner_user_id = :ownerUserId " +
             "     ) as user " +
             "UNION ALL " +
@@ -43,6 +43,7 @@ public interface QuotaRepository extends JpaRepository<Quota, Long> {
             @Param("statusEnumVal_AVAILABLE") int statusEnumVal_AVAILABLE,
             @Param("statusEnumVal_FAILED") int statusEnumVal_FAILED,
             @Param("statusEnumVal_ABORTED_BY_FILE_HOST") int statusEnumVal_ABORTED_BY_FILE_HOST,
+            @Param("statusEnumVal_FAILED_DURING_DELETION") int statusEnumVal_FAILED_DURING_DELETION,
 
             @Param("categoryEnumVal_USER") int categoryEnumVal_USER,
             @Param("categoryEnumVal_TEAM") int categoryEnumVal_TEAM
@@ -60,6 +61,7 @@ public interface QuotaRepository extends JpaRepository<Quota, Long> {
                 indexedFileStatusAttributeConverter.convertToDatabaseColumn(IndexedFileStatus.AVAILABLE),
                 indexedFileStatusAttributeConverter.convertToDatabaseColumn(IndexedFileStatus.FAILED),
                 indexedFileStatusAttributeConverter.convertToDatabaseColumn(IndexedFileStatus.ABORTED_BY_FILE_HOST),
+                indexedFileStatusAttributeConverter.convertToDatabaseColumn(IndexedFileStatus.FAILED_DURING_DELETION),
 
                 quotaSubjectCategoryAttributeConverter.convertToDatabaseColumn(QuotaSubjectCategory.USER),
                 quotaSubjectCategoryAttributeConverter.convertToDatabaseColumn(QuotaSubjectCategory.TEAM)

@@ -19,38 +19,32 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 public class ExceptionHandlerControllerAdvice extends ResponseEntityExceptionHandler {
     private static final Logger loggerOfChild = LoggerFactory.getLogger(ExceptionHandlerControllerAdvice.class);
 
-    private final ApiErrorResponseBody contentNotFoundErrorResponseBody = new ApiErrorResponseBody("Content not found.");
-    private final ApiErrorResponseBody conflictingRequestDataErrorResponseBody = new ApiErrorResponseBody("Conflicting request data.");
-    private final ApiErrorResponseBody unAuthorizedErrorResponseBody = new ApiErrorResponseBody("You are not authorized for the requested operation.");
-    private final ApiErrorResponseBody genericExceptionErrorResponseBody = new ApiErrorResponseBody("Error while executing API request.");
-    private final ApiErrorResponseBody cannotParseIncomingHttpRequestErrorResponseBody = new ApiErrorResponseBody("Error while executing API request.");
-
     @Override
     protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
         loggerOfChild.error("Cannot parse incoming HTTP message!", ex);
 
-        return new ResponseEntity<>(cannotParseIncomingHttpRequestErrorResponseBody, headers, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(new ApiErrorResponseBody(ex.getMessage()), headers, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(ContentNotFoundApiException.class)
     protected ResponseEntity<ApiErrorResponseBody> handleContentNotFound(
             Exception e, WebRequest request) {
         loggerOfChild.error("ContentNotFoundApiException caught while executing api request!", e);
-        return new ResponseEntity<>(contentNotFoundErrorResponseBody, HttpStatus.CONFLICT);
+        return new ResponseEntity<>(new ApiErrorResponseBody(e.getMessage()), HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(ConflictingRequestDataApiException.class)
     protected ResponseEntity<ApiErrorResponseBody> handleConflictingRequestData(
             Exception e, WebRequest request) {
         loggerOfChild.error("ConflictingRequestDataApiException caught while executing api request!", e);
-        return new ResponseEntity<>(conflictingRequestDataErrorResponseBody, HttpStatus.CONFLICT);
+        return new ResponseEntity<>(new ApiErrorResponseBody(e.getMessage()), HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(UnAuthorizedException.class)
     protected ResponseEntity<ApiErrorResponseBody> handleUnAuthorized(
             Exception e, WebRequest request) {
         loggerOfChild.error("UnAuthorizedException caught while executing api request!", e);
-        return new ResponseEntity<>(unAuthorizedErrorResponseBody, HttpStatus.FORBIDDEN);
+        return new ResponseEntity<>(new ApiErrorResponseBody(e.getMessage()), HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(FileServingException.class)
@@ -64,6 +58,6 @@ public class ExceptionHandlerControllerAdvice extends ResponseEntityExceptionHan
     protected ResponseEntity<ApiErrorResponseBody> handleGenericException(
             Exception e, WebRequest request) {
         loggerOfChild.error("Exception caught while executing api request!", e);
-        return new ResponseEntity<>(genericExceptionErrorResponseBody, HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<>(new ApiErrorResponseBody(e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

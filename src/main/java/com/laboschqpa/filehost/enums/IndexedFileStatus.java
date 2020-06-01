@@ -15,7 +15,8 @@ public enum IndexedFileStatus {
     FAILED(5),
     ABORTED_BY_FILE_HOST(6),
     CLEANED_UP_AFTER_FAILED(7),
-    CLEANED_UP_AFTER_ABORTED(8);
+    CLEANED_UP_AFTER_ABORTED(8),
+    FAILED_DURING_DELETION(9);
 
     private Integer value;
 

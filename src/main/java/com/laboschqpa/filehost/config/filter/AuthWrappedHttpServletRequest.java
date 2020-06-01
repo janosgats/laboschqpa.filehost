@@ -9,12 +9,12 @@ import javax.servlet.http.HttpServletRequestWrapper;
 @Getter
 public class AuthWrappedHttpServletRequest extends HttpServletRequestWrapper {
     private AuthMethod authMethod;
-    private WrappedFileServingRequestDto wrappedFileServingRequestDto;
+    private WrappedExternalFileServingRequestDto wrappedExternalFileServingRequestDto;
 
-    public AuthWrappedHttpServletRequest(HttpServletRequest request, AuthMethod authMethod, WrappedFileServingRequestDto wrappedFileServingRequestDto) {
+    public AuthWrappedHttpServletRequest(HttpServletRequest request, AuthMethod authMethod, WrappedExternalFileServingRequestDto wrappedExternalFileServingRequestDto) {
         super(request);
         this.authMethod = authMethod;
-        this.wrappedFileServingRequestDto = wrappedFileServingRequestDto;
+        this.wrappedExternalFileServingRequestDto = wrappedExternalFileServingRequestDto;
     }
 
     public void assertIsAuthInterServiceCall() {

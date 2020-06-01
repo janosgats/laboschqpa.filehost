@@ -122,7 +122,7 @@ public class AuthFilter implements Filter {
         }
     }
 
-    private WrappedFileServingRequestDto authorizeExternalCall(HttpServletRequest httpServletRequest) {
+    private WrappedExternalFileServingRequestDto authorizeExternalCall(HttpServletRequest httpServletRequest) {
         final ExternalIndexedFileServingRequestDto externalRequestDto
                 = ExternalIndexedFileServingRequestDto.Factory.createFrom((httpServletRequest));
 
@@ -146,7 +146,7 @@ public class AuthFilter implements Filter {
         assertIsAuthorizedToResourceResponseIsPositive(isAuthorizedResponseDto, externalRequestDto);
 
         logger.trace("AuthFilter auth is valid for external call.");
-        return WrappedFileServingRequestDto.builder()
+        return WrappedExternalFileServingRequestDto.builder()
                 .fileAccessType(externalRequestDto.getFileAccessType())
                 .indexedFileId(externalRequestDto.getIndexedFileId())
                 .loggedInUserId(isAuthorizedResponseDto.getLoggedInUserId())

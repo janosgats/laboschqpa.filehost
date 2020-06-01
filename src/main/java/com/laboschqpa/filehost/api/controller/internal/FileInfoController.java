@@ -1,4 +1,4 @@
-package com.laboschqpa.filehost.api.controller;
+package com.laboschqpa.filehost.api.controller.internal;
 
 import com.laboschqpa.filehost.api.dto.GetIndexedFileInfoResultDto;
 import com.laboschqpa.filehost.api.service.FileInfoService;
@@ -13,7 +13,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/fileInfo")
+@RequestMapping("/api/internal/fileInfo")
 public class FileInfoController {
     private final FileInfoService fileInfoService;
 

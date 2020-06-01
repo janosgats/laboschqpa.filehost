@@ -28,7 +28,7 @@ public class FileDownloaderService {
     private final TrackingInputStreamFactory trackingInputStreamFactory;
 
     public ResponseEntity<Resource> downloadFile(AuthWrappedHttpServletRequest request) {
-        DownloadableFile downloadableFile = downloadableFileFactory.from(request.getWrappedFileServingRequestDto());
+        DownloadableFile downloadableFile = downloadableFileFactory.from(request.getWrappedExternalFileServingRequestDto());
 
         if (downloadableFile.isAvailable()) {
             final String ifNoneMatchHeaderValue = request.getHeader(HttpHeaders.IF_NONE_MATCH);

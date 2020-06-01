@@ -4,7 +4,7 @@ package com.laboschqpa.filehost.api.service;
 
 import com.laboschqpa.filehost.config.annotation.ExceptionWrappedFileServingClass;
 import com.laboschqpa.filehost.config.filter.AuthWrappedHttpServletRequest;
-import com.laboschqpa.filehost.config.filter.WrappedFileServingRequestDto;
+import com.laboschqpa.filehost.config.filter.WrappedExternalFileServingRequestDto;
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
 import com.laboschqpa.filehost.exceptions.fileserving.*;
@@ -78,7 +78,7 @@ public class FileUploaderService {
             uploadedFileInputStream = uploadedFile.openStream();
             log.debug("Multipart file field {} with fileName {} detected.", fieldName, normalizedFileName);
 
-            IndexedFileEntity newlySavedFile = saveNewFile(request.getWrappedFileServingRequestDto(), uploadedFileInputStream,
+            IndexedFileEntity newlySavedFile = saveNewFile(request.getWrappedExternalFileServingRequestDto(), uploadedFileInputStream,
                     normalizedFileName, null);//TODO: Get the initial file size approximation from a form field
             handleStreamClose(uploadedFileInputStream, false);
             return newlySavedFile;
@@ -154,11 +154,11 @@ public class FileUploaderService {
         }
     }
 
-    private IndexedFileEntity saveNewFile(WrappedFileServingRequestDto wrappedFileServingRequestDto,
+    private IndexedFileEntity saveNewFile(WrappedExternalFileServingRequestDto wrappedExternalFileServingRequestDto,
                                           InputStream fileUploadingInputStream, String uploadedFileName, Long approximateFileSize) {
         StoredFile newUploadableFile = null;
         try {
-            newUploadableFile = uploadableFileFactory.fromFileUploadRequest(wrappedFileServingRequestDto, uploadedFileName);
+            newUploadableFile = uploadableFileFactory.fromFileUploadRequest(wrappedExternalFileServingRequestDto, uploadedFileName);
 
             TrackingInputStream trackingInputStream = trackingInputStreamFactory.createForFileUpload(fileUploadingInputStream);
             trackingInputStream.setLimit(uploadFileMaxSize);

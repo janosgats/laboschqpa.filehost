@@ -137,7 +137,8 @@ public class StoredFile implements DownloadableFile, DeletableFile, UploadableFi
             storedFileUtils.saveStoredFileEntity(storedFileEntity);
             java.nio.file.Files.delete(Path.of(file.getAbsolutePath()));
         } catch (IOException e) {
-            storedFileEntity.setStatus(IndexedFileStatus.FAILED);
+            log.error("Couldn't delete file {}!", storedFileEntity.getId(), e);
+            storedFileEntity.setStatus(IndexedFileStatus.FAILED_DURING_DELETION);
             storedFileUtils.saveStoredFileEntity(storedFileEntity);
             throw new FileServingException("Cannot delete file: " + file.getAbsolutePath(), e);
         }

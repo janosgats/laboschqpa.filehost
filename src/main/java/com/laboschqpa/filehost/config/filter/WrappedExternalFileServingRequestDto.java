@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class WrappedFileServingRequestDto {
+public class WrappedExternalFileServingRequestDto {
     private Long loggedInUserId;
     private Long loggedInUserTeamId;
     private Long indexedFileId;

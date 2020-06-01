@@ -1,6 +1,6 @@
 package com.laboschqpa.filehost.model.file.factory;
 
-import com.laboschqpa.filehost.config.filter.WrappedFileServingRequestDto;
+import com.laboschqpa.filehost.config.filter.WrappedExternalFileServingRequestDto;
 import com.laboschqpa.filehost.entity.StoredFileEntity;
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
 import com.laboschqpa.filehost.model.file.StoredFile;
@@ -25,19 +25,19 @@ public class UploadableFileFactory {
     private final QuotaAllocatingStoredFileSaver quotaAllocatingStoredFileSaver;
     private final Detector tikaDetector;
 
-    public StoredFile fromFileUploadRequest(WrappedFileServingRequestDto wrappedFileServingRequestDto, String originalFileName) {
-        StoredFileEntity storedFileEntity = createStoredFileEntityForUploadedFile(wrappedFileServingRequestDto, originalFileName);
+    public StoredFile fromFileUploadRequest(WrappedExternalFileServingRequestDto wrappedExternalFileServingRequestDto, String originalFileName) {
+        StoredFileEntity storedFileEntity = createStoredFileEntityForUploadedFile(wrappedExternalFileServingRequestDto, originalFileName);
         logger.trace("Created storedFileEntity for file upload: {}", storedFileEntity);
 
         return new StoredFile(storedFileUtils, storedFileEntity, quotaAllocatingStoredFileSaver, tikaDetector, false);
     }
 
-    private StoredFileEntity createStoredFileEntityForUploadedFile(WrappedFileServingRequestDto wrappedFileServingRequestDto, String originalFileName) {
+    private StoredFileEntity createStoredFileEntityForUploadedFile(WrappedExternalFileServingRequestDto wrappedExternalFileServingRequestDto, String originalFileName) {
         StoredFileEntity storedFileEntity = StoredFileEntity.builder()
                 .status(IndexedFileStatus.ADDED_TO_DATABASE_INDEX)
                 .originalFileName(originalFileName)
-                .ownerUserId(wrappedFileServingRequestDto.getLoggedInUserId())
-                .ownerTeamId(wrappedFileServingRequestDto.getLoggedInUserTeamId())
+                .ownerUserId(wrappedExternalFileServingRequestDto.getLoggedInUserId())
+                .ownerTeamId(wrappedExternalFileServingRequestDto.getLoggedInUserTeamId())
                 .creationTime(Instant.now())
                 .eTag(String.valueOf(System.nanoTime()))
                 .build();
