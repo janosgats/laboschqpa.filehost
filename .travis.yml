@@ -1,24 +1,70 @@
 os: linux
-language: java
-services:
-  - docker
-
-before_install:
-  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-  - SHORT_COMMIT_HASH=${TRAVIS_COMMIT::7}
-
-  - IMAGE_NAME_CACHE_BUILDER=${DOCKER_USERNAME}/laboschqpa-filehost:builder
-  - IMAGE_NAME_CACHE_FINAL=${DOCKER_USERNAME}/laboschqpa-filehost
-  - IMAGE_NAME_TAG=${DOCKER_USERNAME}/laboschqpa-filehost:$(date -u +%Y%m%d-%H%M%S)_${SHORT_COMMIT_HASH}
-
-  - docker pull ${IMAGE_NAME_CACHE_BUILDER} || true
-  - docker pull ${IMAGE_NAME_CACHE_FINAL} || true
-
-  - docker build --target=builder_image --cache-from ${IMAGE_NAME_CACHE_BUILDER} -t ${IMAGE_NAME_CACHE_BUILDER} -f docker/Dockerfile-k8s_dev-travis_build .
-  - docker push ${IMAGE_NAME_CACHE_BUILDER}
-  - docker build --cache-from ${IMAGE_NAME_CACHE_BUILDER} --cache-from ${IMAGE_NAME_CACHE_FINAL} -t ${IMAGE_NAME_CACHE_FINAL} -t ${IMAGE_NAME_TAG} -f docker/Dockerfile-k8s_dev-travis_build .
-  - docker push ${IMAGE_NAME_CACHE_FINAL}
-  - docker push ${IMAGE_NAME_TAG}
+language: minimal
+env:
+  global:
+#    - SKIP_DOCKER_BUILD=true
+#    - FORCE_DEPLOY_TO_KSZK=true
+#    - SKIP_DEPLOY_TO_KSZK=true
+    - PROJECT_IMAGE_NAME=laboschqpa-filehost
+    - SHORT_COMMIT_HASH=${TRAVIS_COMMIT::10}
+    - IMAGE_NAME_COMMIT=${DOCKER_USERNAME}/${PROJECT_IMAGE_NAME}:${SHORT_COMMIT_HASH}
+    - IMAGE_NAME_BRANCH=${DOCKER_USERNAME}/${PROJECT_IMAGE_NAME}:${TRAVIS_BRANCH}
 
 install: skip
 script: skip
+
+jobs:
+  include:
+    - stage: DockerBuild
+      if: env(SKIP_DOCKER_BUILD) != "true"
+      services:
+        - docker
+      script: skip
+      before_install:
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+        - IMAGE_NAME_LATEST=${DOCKER_USERNAME}/${PROJECT_IMAGE_NAME}
+      install:
+        - docker pull ${IMAGE_NAME_LATEST} || true
+
+        - docker build -t ${IMAGE_NAME_LATEST} -t ${IMAGE_NAME_COMMIT} -t ${IMAGE_NAME_BRANCH} -f docker/Dockerfile-k8s_dev-travis_build .
+
+        - docker push ${IMAGE_NAME_LATEST}
+        - docker push ${IMAGE_NAME_COMMIT}
+        - docker push ${IMAGE_NAME_BRANCH}
+
+    - stage: DeployToKSZK
+      #      if: branch = master
+      #      if: env(FORCE_DEPLOY_TO_KSZK) = "true"
+      if: env(SKIP_DEPLOY_TO_KSZK) != "true" AND (branch = master OR env(FORCE_DEPLOY_TO_KSZK) = "true")
+      language: java
+      script: skip
+      before_install:
+        - echo "Installing JMeter and getting gangway Refresh token"
+        - sudo apt-get -y install unzip
+        - cd pipeline
+        - wget --no-check-certificate https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.2.zip
+        - unzip apache-jmeter-5.2.zip
+        - apache-jmeter-5.2/bin/jmeter.sh -t ./get-refresh-token-by-authsch-login.jmx -n
+        - KSZK_SECRET_AUTH_PROVIDER_REFRESH_TOKEN=$(cat authschAuthproviderRefreshtoken.txt)
+        - cd ..
+
+        - echo "Installing kubectl"
+        - curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/$(uname | awk '{print tolower($0)}')/amd64/kubectl
+        - chmod +x ./kubectl
+        - sudo mv ./kubectl /usr/local/bin/kubectl
+
+        - echo "Configuring kubectl"
+        - echo $KSZK_SECRET_CA > ca-KSZK.pem
+        - kubectl config set-cluster KSZK --server=https://api.k8s.sch.bme.hu --certificate-authority=ca-KSZK.pem
+        - kubectl config set-credentials $KSZK_SECRET_SCH_ACCOUNT
+          --auth-provider=oidc
+          --auth-provider-arg=idp-issuer-url=https://auth.k8s.sch.bme.hu/
+          --auth-provider-arg=client-id=oidc-auth-client
+          --auth-provider-arg=client-secret=$KSZK_SECRET_AUTH_PROVIDER_CLIENT_SECRET
+          --auth-provider-arg=refresh-token=$KSZK_SECRET_AUTH_PROVIDER_REFRESH_TOKEN
+          --auth-provider-arg=id-token=$KSZK_SECRET_AUTH_PROVIDER_ID_TOKEN
+        - kubectl config set-context KSZK --cluster=KSZK --user=$KSZK_SECRET_SCH_ACCOUNT
+        - kubectl config use-context KSZK
+      install:
+        - echo "Starting deployment"
+        - kubectl --insecure-skip-tls-verify -n=csillagtura-sch-bme-hu set image deployments/filehost filehost=${IMAGE_NAME_COMMIT}
