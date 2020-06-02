@@ -2,9 +2,9 @@ package com.laboschqpa.filehost.service;
 
 import com.laboschqpa.filehost.entity.StoredFileEntity;
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
-import com.laboschqpa.filehost.exceptions.fileserving.FileSavingException;
-import com.laboschqpa.filehost.exceptions.fileserving.FileServingException;
-import com.laboschqpa.filehost.exceptions.fileserving.QuotaExceededException;
+import com.laboschqpa.filehost.enums.apierrordescriptor.UploadApiError;
+import com.laboschqpa.filehost.exceptions.apierrordescriptor.UploadException;
+import com.laboschqpa.filehost.exceptions.apierrordescriptor.QuotaExceededException;
 import com.laboschqpa.filehost.model.streamtracking.TrackingInputStream;
 import com.laboschqpa.filehost.repo.StoredFileEntityRepository;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +39,7 @@ public class QuotaAllocatingStoredFileSaver implements StoredFileSaver {
             throw e;
         } catch (Exception e) {
             storedFileEntity.setStatus(IndexedFileStatus.FAILED);
-            throw new FileServingException("Cannot write stream to file!", e);
+            throw new UploadException(UploadApiError.CANNOT_WRITE_STREAM_TO_FILE, "Cannot write stream to file!", e);
         } finally {
             storedFileEntity.setSize(streamToWriteIntoFile.getCountOfReadBytes());
             storedFileEntityRepository.save(storedFileEntity);
@@ -97,7 +97,8 @@ public class QuotaAllocatingStoredFileSaver implements StoredFileSaver {
     private void handleDirectoryStructureBeforeWritingToFile(File file) {
         if (!file.getParentFile().exists()) {
             if (!file.getParentFile().mkdirs()) {
-                throw new FileSavingException("Couldn't create containing directory: " + file.getParentFile());
+                throw new UploadException(UploadApiError.ERROR_DURING_SAVING_FILE,
+                        "Couldn't create containing directory: " + file.getParentFile());
             }
         }
     }

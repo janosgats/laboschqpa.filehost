@@ -3,7 +3,7 @@ package com.laboschqpa.filehost.model.file.factory;
 import com.laboschqpa.filehost.config.filter.WrappedExternalFileServingRequestDto;
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
 import com.laboschqpa.filehost.entity.StoredFileEntity;
-import com.laboschqpa.filehost.exceptions.ContentNotFoundApiException;
+import com.laboschqpa.filehost.exceptions.apierrordescriptor.ContentNotFoundException;
 import com.laboschqpa.filehost.exceptions.InvalidHttpRequestException;
 import com.laboschqpa.filehost.model.file.DownloadableFile;
 import com.laboschqpa.filehost.model.file.StoredFile;
@@ -29,7 +29,7 @@ public class DownloadableFileFactory {
         Optional<IndexedFileEntity> indexedFileOptional = indexedFileEntityRepository.findById(indexedFileId);
 
         if (indexedFileOptional.isEmpty())
-            throw new ContentNotFoundApiException("Cannot find indexed file with id: " + indexedFileId);
+            throw new ContentNotFoundException("Cannot find indexed file with id: " + indexedFileId);
 
         IndexedFileEntity indexedFileEntity = indexedFileOptional.get();
 

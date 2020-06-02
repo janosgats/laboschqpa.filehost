@@ -1,19 +1,13 @@
 package com.laboschqpa.filehost.util;
 
 import com.laboschqpa.filehost.entity.StoredFileEntity;
-import com.laboschqpa.filehost.exceptions.fileserving.FileSavingException;
-import com.laboschqpa.filehost.exceptions.fileserving.FileServingException;
-import com.laboschqpa.filehost.exceptions.fileserving.InvalidStoredFileException;
+import com.laboschqpa.filehost.enums.apierrordescriptor.FileServingApiError;
+import com.laboschqpa.filehost.exceptions.apierrordescriptor.FileServingException;
 import com.laboschqpa.filehost.repo.StoredFileEntityRepository;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -31,7 +25,7 @@ public class StoredFileUtils {
 
     public String getFullPathFromStoredFileEntityPath(String storedFileEntityPath) {
         if (storedFileEntityPath == null || storedFileEntityPath.isBlank()) {
-            throw new InvalidStoredFileException("storedFileEntityPath is null or blank!");
+            throw new FileServingException(FileServingApiError.INVALID_STORED_FILE, "storedFileEntityPath is null or blank!");
         }
         return Path.of(storedFilesBasePath, storedFileEntityPath).toString();
     }

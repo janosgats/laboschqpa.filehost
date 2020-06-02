@@ -1,6 +1,6 @@
 package com.laboschqpa.filehost.service.apiclient.qpaserver;
 
-import com.laboschqpa.filehost.config.annotation.ExceptionWrappedApiClient;
+import com.laboschqpa.filehost.annotation.ExceptionWrappedApiClient;
 import com.laboschqpa.filehost.exceptions.apiclient.ResponseCodeIsNotSuccessApiClientException;
 import com.laboschqpa.filehost.service.apiclient.AbstractApiClient;
 import com.laboschqpa.filehost.service.apiclient.ApiCallerFactory;

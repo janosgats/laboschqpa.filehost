@@ -1,18 +1,17 @@
 package com.laboschqpa.filehost.config.filter;
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.laboschqpa.filehost.api.dto.ExternalIndexedFileServingRequestDto;
+import com.laboschqpa.filehost.api.errorhandling.ApiErrorResponseBody;
+import com.laboschqpa.filehost.exceptions.apierrordescriptor.ApiErrorDescriptorException;
 import com.laboschqpa.filehost.service.apiclient.qpaserver.dto.IsUserAuthorizedToResourceResponseDto;
 import com.laboschqpa.filehost.enums.FileAccessType;
-import com.laboschqpa.filehost.exceptions.ContentNotFoundApiException;
 import com.laboschqpa.filehost.exceptions.InvalidHttpRequestException;
 import com.laboschqpa.filehost.exceptions.UnAuthorizedException;
-import com.laboschqpa.filehost.exceptions.fileserving.FileIsNotAvailableException;
 import com.laboschqpa.filehost.repo.IndexedFileEntityRepository;
 import com.laboschqpa.filehost.repo.dto.IndexedFileOnlyJpaDto;
 import com.laboschqpa.filehost.service.apiclient.qpaserver.dto.IsUserAuthorizedToResourceRequestDto;
 import com.laboschqpa.filehost.service.apiclient.qpaserver.QpaServerApiClient;
+import com.laboschqpa.filehost.util.ServletHelper;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,24 +57,20 @@ public class AuthFilter implements Filter {
 
         try {
             wrappedHttpServletRequest = assertIfRequestProcessingCanBeContinued_andGetWrappedHttpServletRequest((HttpServletRequest) request);
-        } catch (FileIsNotAvailableException e) {
-            logger.trace("FileIsNotAvailableException in AuthFilter: " + e.getMessage());
-            writeErrorResponseBody((HttpServletResponse) response, "Resource is not available: " + e.getMessage(), HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE);
-            wrappedHttpServletRequest = null;
-        } catch (ContentNotFoundApiException e) {
-            logger.trace("ContentNotFoundApiException in AuthFilter: " + e.getMessage());
-            writeErrorResponseBody((HttpServletResponse) response, "Resource not found: " + e.getMessage(), HttpStatus.NOT_FOUND);
+        } catch (ApiErrorDescriptorException e) {
+            ServletHelper.setJsonResponse((HttpServletResponse) response, new ApiErrorResponseBody(e.getApiErrorDescriptor(), e.getMessage()), HttpStatus.CONFLICT.value());
             wrappedHttpServletRequest = null;
         } catch (UnAuthorizedException e) {
             logger.trace("Request is unauthorized in AuthFilter: " + e.getMessage());
-            writeErrorResponseBody((HttpServletResponse) response, "Unauthorized: " + e.getMessage(), HttpStatus.FORBIDDEN);
+            ServletHelper.setJsonResponse((HttpServletResponse) response, new ApiErrorResponseBody("Unauthorized: " + e.getMessage()), HttpStatus.FORBIDDEN.value());
             wrappedHttpServletRequest = null;
         } catch (InvalidHttpRequestException e) {
-            writeErrorResponseBody((HttpServletResponse) response, "Invalid request: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+            ServletHelper.setJsonResponse((HttpServletResponse) response, new ApiErrorResponseBody("Invalid request: " + e.getMessage()), HttpStatus.BAD_REQUEST.value());
             wrappedHttpServletRequest = null;
         } catch (Exception e) {
             logger.debug("Exception thrown while trying to authenticate incoming request!", e);
-            writeErrorResponseBody((HttpServletResponse) response, "Exception thrown while trying to authenticate incoming request!", HttpStatus.INTERNAL_SERVER_ERROR);
+            ServletHelper.setJsonResponse((HttpServletResponse) response,
+                    new ApiErrorResponseBody("Exception thrown while trying to authenticate incoming request!"), HttpStatus.FORBIDDEN.value());
             wrappedHttpServletRequest = null;
         }
 
@@ -192,18 +187,6 @@ public class AuthFilter implements Filter {
 
     private boolean isAuthInterServiceHeaderValid(String authHeader) {
         return authHeader.equals(System.getProperty("auth.interservice.key"));
-    }
-
-    private void writeErrorResponseBody(HttpServletResponse httpServletResponse, String errorMessage, HttpStatus
-            httpStatus) throws IOException {
-        ObjectNode responseObjectNode = new ObjectNode(JsonNodeFactory.instance);
-        responseObjectNode.put("error", errorMessage);
-        String responseBody = responseObjectNode.toString();
-
-        httpServletResponse.setContentType("application/json");
-        httpServletResponse.setContentLength(responseBody.length());
-        httpServletResponse.getWriter().write(responseBody);
-        httpServletResponse.setStatus(httpStatus.value());
     }
 
     @Value("${authfilter.skip.all:false}")

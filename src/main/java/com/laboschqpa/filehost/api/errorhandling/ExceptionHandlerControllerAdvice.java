@@ -1,9 +1,8 @@
 package com.laboschqpa.filehost.api.errorhandling;
 
 import com.laboschqpa.filehost.exceptions.ConflictingRequestDataApiException;
-import com.laboschqpa.filehost.exceptions.ContentNotFoundApiException;
+import com.laboschqpa.filehost.exceptions.apierrordescriptor.ApiErrorDescriptorException;
 import com.laboschqpa.filehost.exceptions.UnAuthorizedException;
-import com.laboschqpa.filehost.exceptions.fileserving.FileServingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -26,11 +25,11 @@ public class ExceptionHandlerControllerAdvice extends ResponseEntityExceptionHan
         return new ResponseEntity<>(new ApiErrorResponseBody(ex.getMessage()), headers, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(ContentNotFoundApiException.class)
-    protected ResponseEntity<ApiErrorResponseBody> handleContentNotFound(
-            Exception e, WebRequest request) {
-        loggerOfChild.error("ContentNotFoundApiException caught while executing api request!", e);
-        return new ResponseEntity<>(new ApiErrorResponseBody(e.getMessage()), HttpStatus.CONFLICT);
+    @ExceptionHandler({ApiErrorDescriptorException.class})
+    protected ResponseEntity<ApiErrorResponseBody> handleApiErrorDescriptorException(
+            ApiErrorDescriptorException e, WebRequest request) {
+        loggerOfChild.trace("handleApiErrorDescriptorException() caught exception while executing api request!", e);
+        return new ResponseEntity<>(new ApiErrorResponseBody(e.getApiErrorDescriptor(), e.getMessage()), HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(ConflictingRequestDataApiException.class)
@@ -45,13 +44,6 @@ public class ExceptionHandlerControllerAdvice extends ResponseEntityExceptionHan
             Exception e, WebRequest request) {
         loggerOfChild.error("UnAuthorizedException caught while executing api request!", e);
         return new ResponseEntity<>(new ApiErrorResponseBody(e.getMessage()), HttpStatus.FORBIDDEN);
-    }
-
-    @ExceptionHandler(FileServingException.class)
-    protected ResponseEntity<ApiErrorResponseBody> handleFileServing(
-            Exception e, WebRequest request) {
-        loggerOfChild.warn("FileServingException caught while executing api request!", e);
-        return new ResponseEntity<>(new ApiErrorResponseBody(e.getMessage()), HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(Exception.class)

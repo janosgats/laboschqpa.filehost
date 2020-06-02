@@ -1,8 +1,9 @@
 package com.laboschqpa.filehost.api.service;
 
-import com.laboschqpa.filehost.config.annotation.ExceptionWrappedFileServingClass;
+import com.laboschqpa.filehost.annotation.ExceptionWrappedFileServingClass;
 import com.laboschqpa.filehost.config.filter.AuthWrappedHttpServletRequest;
-import com.laboschqpa.filehost.exceptions.fileserving.*;
+import com.laboschqpa.filehost.enums.apierrordescriptor.FileServingApiError;
+import com.laboschqpa.filehost.exceptions.apierrordescriptor.FileServingException;
 import com.laboschqpa.filehost.model.file.DownloadableFile;
 import com.laboschqpa.filehost.model.file.factory.DownloadableFileFactory;
 import com.laboschqpa.filehost.model.streamtracking.TrackingInputStream;
@@ -42,7 +43,8 @@ public class FileDownloaderService {
             TrackingInputStream downloadTrackingStream = trackingInputStreamFactory.createForFileDownload(downloadableFile.getStream());
             return new ResponseEntity<>(new InputStreamResource(downloadTrackingStream), generateHeaders(downloadableFile), HttpStatus.OK);
         } else {
-            throw new FileIsNotAvailableException("The requested file is not available for download. File status: " + downloadableFile.getStatus());
+            throw new FileServingException(FileServingApiError.FILE_IS_NOT_AVAILABLE,
+                    "The requested file is not available for download. File status: " + downloadableFile.getStatus());
         }
     }
 

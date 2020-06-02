@@ -2,12 +2,16 @@
 
 package com.laboschqpa.filehost.api.service;
 
-import com.laboschqpa.filehost.config.annotation.ExceptionWrappedFileServingClass;
+import com.laboschqpa.filehost.annotation.ExceptionWrappedFileServingClass;
 import com.laboschqpa.filehost.config.filter.AuthWrappedHttpServletRequest;
 import com.laboschqpa.filehost.config.filter.WrappedExternalFileServingRequestDto;
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
-import com.laboschqpa.filehost.exceptions.fileserving.*;
+import com.laboschqpa.filehost.enums.apierrordescriptor.UploadApiError;
+import com.laboschqpa.filehost.exceptions.apierrordescriptor.UploadException;
+import com.laboschqpa.filehost.exceptions.apierrordescriptor.InvalidUploadRequestException;
+import com.laboschqpa.filehost.exceptions.apierrordescriptor.QuotaExceededException;
+import com.laboschqpa.filehost.exceptions.apierrordescriptor.StreamLengthLimitExceededException;
 import com.laboschqpa.filehost.model.file.IndexedFile;
 import com.laboschqpa.filehost.model.file.StoredFile;
 import com.laboschqpa.filehost.model.file.factory.UploadableFileFactory;
@@ -87,7 +91,7 @@ public class FileUploaderService {
             throw e;
         } catch (Exception e) {
             handleStreamClose(uploadedFileInputStream, true);
-            throw new FileSavingException("Exception occurred while saving file.", e);
+            throw new UploadException(UploadApiError.ERROR_DURING_SAVING_FILE, "Exception occurred while saving file.", e);
         }
     }
 
@@ -182,7 +186,7 @@ public class FileUploaderService {
                 markFileAs(IndexedFileStatus.FAILED, newUploadableFile);
                 cleanUpFile(IndexedFileStatus.CLEANED_UP_AFTER_FAILED, newUploadableFile);
             }
-            throw new FileSavingException("Exception while handling saving of the uploaded file!", e);
+            throw new UploadException(UploadApiError.ERROR_DURING_SAVING_FILE,"Exception while handling saving of the uploaded file!", e);
         }
     }
 

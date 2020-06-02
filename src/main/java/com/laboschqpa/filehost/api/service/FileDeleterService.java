@@ -2,9 +2,10 @@
 
 package com.laboschqpa.filehost.api.service;
 
-import com.laboschqpa.filehost.config.annotation.ExceptionWrappedFileServingClass;
+import com.laboschqpa.filehost.annotation.ExceptionWrappedFileServingClass;
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
-import com.laboschqpa.filehost.exceptions.fileserving.FileServingException;
+import com.laboschqpa.filehost.enums.apierrordescriptor.FileServingApiError;
+import com.laboschqpa.filehost.exceptions.apierrordescriptor.FileServingException;
 import com.laboschqpa.filehost.model.file.DeletableFile;
 import com.laboschqpa.filehost.model.file.factory.DeletableFileFactory;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,8 @@ public class FileDeleterService {
         log.debug("Deleting file: {}", fileIdToDelete);
 
         if (deletableFile.getStatus() == IndexedFileStatus.DELETED) {
-            throw new FileServingException("File " + fileIdToDelete + " is already deleted!");
+            throw new FileServingException(FileServingApiError.FILE_STATUS_IS_ALREADY_DELETED,
+                    "Status of file " + fileIdToDelete + " is already deleted!");
         }
         deletableFile.delete();
     }

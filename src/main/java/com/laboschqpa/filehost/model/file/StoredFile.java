@@ -2,8 +2,8 @@ package com.laboschqpa.filehost.model.file;
 
 import com.laboschqpa.filehost.entity.StoredFileEntity;
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
-import com.laboschqpa.filehost.exceptions.fileserving.FileServingException;
-import com.laboschqpa.filehost.exceptions.fileserving.InvalidStoredFileException;
+import com.laboschqpa.filehost.enums.apierrordescriptor.FileServingApiError;
+import com.laboschqpa.filehost.exceptions.apierrordescriptor.FileServingException;
 import com.laboschqpa.filehost.model.streamtracking.TrackingInputStream;
 import com.laboschqpa.filehost.service.StoredFileSaver;
 import com.laboschqpa.filehost.util.StoredFileUtils;
@@ -46,7 +46,7 @@ public class StoredFile implements DownloadableFile, DeletableFile, UploadableFi
 
         if (assertFileCurrentlyExists) {
             if (!isFileCurrentlyExisting())
-                throw new InvalidStoredFileException("File from storedFileEntity is not a valid file: " + file.getAbsolutePath());
+                throw new FileServingException(FileServingApiError.INVALID_STORED_FILE, "File from storedFileEntity is not a valid file: " + file.getAbsolutePath());
         }
     }
 
@@ -81,16 +81,16 @@ public class StoredFile implements DownloadableFile, DeletableFile, UploadableFi
     @Override
     public InputStream getStream() {
         if (!isFileCurrentlyExisting())
-            throw new FileServingException("File does not exist currently!");
+            throw new FileServingException(FileServingApiError.FILE_DOES_NOT_EXIST, "File does not exist currently!");
 
         if (!isAvailable())
-            throw new FileServingException("The file is not available (yet)!");
+            throw new FileServingException(FileServingApiError.FILE_IS_NOT_AVAILABLE, "The file is not available (yet)!");
 
         if (readingStream == null) {
             try {
                 this.readingStream = new FileInputStream(file);
             } catch (Exception e) {
-                throw new FileServingException("Cannot instantiate FileInputStream from StoredFile::file!", e);
+                throw new FileServingException(FileServingApiError.CANNOT_CREATE_FILE_READ_STREAM, "Cannot instantiate FileInputStream from StoredFile::file!", e);
             }
         }
 
@@ -130,7 +130,7 @@ public class StoredFile implements DownloadableFile, DeletableFile, UploadableFi
     @Override
     public void delete() {
         if (!isFileCurrentlyExisting())
-            throw new FileServingException("File does not exist currently!");
+            throw new FileServingException(FileServingApiError.FILE_DOES_NOT_EXIST, "File does not exist currently!");
 
         try {
             storedFileEntity.setStatus(IndexedFileStatus.DELETED);
@@ -140,7 +140,7 @@ public class StoredFile implements DownloadableFile, DeletableFile, UploadableFi
             log.error("Couldn't delete file {}!", storedFileEntity.getId(), e);
             storedFileEntity.setStatus(IndexedFileStatus.FAILED_DURING_DELETION);
             storedFileUtils.saveStoredFileEntity(storedFileEntity);
-            throw new FileServingException("Cannot delete file: " + file.getAbsolutePath(), e);
+            throw new FileServingException(FileServingApiError.CANNOT_DELETE_FILE, "Cannot delete file: " + file.getAbsolutePath(), e);
         }
     }
 

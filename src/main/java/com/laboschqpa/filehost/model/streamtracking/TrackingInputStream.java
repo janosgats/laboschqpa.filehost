@@ -1,6 +1,6 @@
 package com.laboschqpa.filehost.model.streamtracking;
 
-import com.laboschqpa.filehost.exceptions.fileserving.StreamLengthLimitExceededException;
+import com.laboschqpa.filehost.exceptions.apierrordescriptor.StreamLengthLimitExceededException;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
