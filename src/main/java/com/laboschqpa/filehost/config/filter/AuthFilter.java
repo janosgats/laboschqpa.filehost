@@ -2,17 +2,18 @@ package com.laboschqpa.filehost.config.filter;
 
 import com.laboschqpa.filehost.api.dto.ExternalIndexedFileServingRequestDto;
 import com.laboschqpa.filehost.api.errorhandling.ApiErrorResponseBody;
-import com.laboschqpa.filehost.exceptions.apierrordescriptor.ApiErrorDescriptorException;
-import com.laboschqpa.filehost.service.apiclient.qpaserver.dto.IsUserAuthorizedToResourceResponseDto;
 import com.laboschqpa.filehost.enums.FileAccessType;
 import com.laboschqpa.filehost.exceptions.InvalidHttpRequestException;
 import com.laboschqpa.filehost.exceptions.UnAuthorizedException;
+import com.laboschqpa.filehost.exceptions.apierrordescriptor.ApiErrorDescriptorException;
 import com.laboschqpa.filehost.repo.IndexedFileEntityRepository;
 import com.laboschqpa.filehost.repo.dto.IndexedFileOnlyJpaDto;
-import com.laboschqpa.filehost.service.apiclient.qpaserver.dto.IsUserAuthorizedToResourceRequestDto;
 import com.laboschqpa.filehost.service.apiclient.qpaserver.QpaServerApiClient;
+import com.laboschqpa.filehost.service.apiclient.qpaserver.dto.IsUserAuthorizedToResourceRequestDto;
+import com.laboschqpa.filehost.service.apiclient.qpaserver.dto.IsUserAuthorizedToResourceResponseDto;
 import com.laboschqpa.filehost.util.ServletHelper;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,6 +46,7 @@ import java.io.IOException;
 public class AuthFilter implements Filter {
     private static final Logger logger = LoggerFactory.getLogger(AuthFilter.class);
     private static final String AUTH_INTER_SERVICE_HEADER_NAME = "AuthInterService";
+    private static final String PROMETHEUS_METRICS_EXPOSE_URL = "/actuator/prometheus";
 
     private boolean authSkipAll;
 
@@ -80,7 +82,10 @@ public class AuthFilter implements Filter {
     }
 
     private HttpServletRequest assertIfRequestProcessingCanBeContinued_andGetWrappedHttpServletRequest(HttpServletRequest httpServletRequest) {
-        if (authSkipAll) {
+        if (PROMETHEUS_METRICS_EXPOSE_URL.equals(httpServletRequest.getRequestURI())) {
+            //Skipping auth for prometheus scraping
+            return httpServletRequest;
+        } else if (authSkipAll) {
             logger.trace("Skipping auth filter according to app configuration!");
             //Defaulting to normal API request
             return httpServletRequest;
@@ -93,7 +98,7 @@ public class AuthFilter implements Filter {
         final String authInterServiceHeader = httpServletRequest.getHeader(AUTH_INTER_SERVICE_HEADER_NAME);
 
         final AuthMethod authMethod;
-        if (authInterServiceHeader != null && !authInterServiceHeader.isBlank()) {
+        if (StringUtils.isNotBlank(authInterServiceHeader)) {
             authMethod = AuthMethod.AUTH_INTER_SERVICE;
         } else {
             authMethod = AuthMethod.USER_SESSION;

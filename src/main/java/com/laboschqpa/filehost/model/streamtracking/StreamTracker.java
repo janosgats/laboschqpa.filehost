@@ -50,15 +50,19 @@ public class StreamTracker {
     /**
      * @return trackedValueDifference since last call to {@link StreamTracker#popTrackingIntervalState}
      */
-    public long peekTrackedValue() {
+    public synchronized long peekTrackedValue() {
         return trackedValueDifference;
     }
 
     /**
      * @return elapsed time since last call to {@link StreamTracker#popTrackingIntervalState}
      */
-    public long peekElapsedTime() {
+    public synchronized long peekElapsedTime() {
         return System.currentTimeMillis() - startMillisOfLastInterval;
+    }
+
+    public synchronized long getAbsoluteTrackedValue() {
+        return absoluteTrackedValue;
     }
 
 }

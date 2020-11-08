@@ -46,6 +46,7 @@ public class GlobalStreamTrackerService implements Runnable {
     private void printRegisteredStreamTrackers() {
         synchronized (streamTrackers) {
             for (StreamTracker streamTracker : streamTrackers) {
+                //TODO: Track the streamTracker.getAbsoluteTrackedValue()-s to prometheus metrics!
                 logger.debug("{}: {}", streamTracker.getName(), streamTracker.popAndFormatTrackingIntervalState());
             }
         }
