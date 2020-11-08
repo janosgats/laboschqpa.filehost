@@ -115,12 +115,6 @@ public class TrackingInputStream extends InputStream {
     }
 
     @Override
-    public void skipNBytes(long n) throws IOException {
-        wrappedInputStream.skipNBytes(n);
-        proceedStreamReadingStatsIfValueIsNotNegative(n);
-    }
-
-    @Override
     public int available() throws IOException {
         return wrappedInputStream.available();
     }
