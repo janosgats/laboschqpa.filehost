@@ -1,10 +1,9 @@
 package com.laboschqpa.filehost.service.apiclient;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.laboschqpa.filehost.exceptions.apiclient.ApiClientException;
 import com.laboschqpa.filehost.exceptions.apiclient.ResponseCodeIsNotSuccessApiClientException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ReactiveHttpOutputMessage;
@@ -21,15 +20,17 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Log4j2
 public class ApiCaller {
-    private static final Logger logger = LoggerFactory.getLogger(ApiCaller.class);
     private String apiBaseUrl;
     private WebClient webClient;
+    private String[] secretsToHideInLogs;
 
-    public ApiCaller(String apiBaseUrl, WebClient webClient) {
+    public ApiCaller(String apiBaseUrl, WebClient webClient, String[] secretsToHideInLogs) {
 
         this.apiBaseUrl = apiBaseUrl;
         this.webClient = webClient;
+        this.secretsToHideInLogs = secretsToHideInLogs;
     }
 
     public <T> T doCallAndThrowExceptionIfStatuscodeIsNot2xx(final Class<T> responseBodyClass, String uriPath, HttpMethod httpMethod) {
@@ -84,7 +85,7 @@ public class ApiCaller {
         String queryString = createQueryStringFromHttpParameters(queryParams, disableUrlEncodingOfQueryParams);
         String fullUriString = this.apiBaseUrl + uriPath + "?" + queryString;
 
-        ClientResponse response = this.webClient
+        final Mono<T> responseBodyMono = this.webClient
                 .method(httpMethod)
                 .uri(fullUriString)
                 .cookies(requestCookies -> {
@@ -97,53 +98,15 @@ public class ApiCaller {
                         httpHeaders.addAll(headers);
                 })
                 .exchange()
-                .onErrorResume(e -> {
-                    logger.error("Error during communication with " + fullUriString, e);
-                    return Mono.error(new ApiClientException(e));
-                })
-                .block();
+                .flatMap((clientResponse) -> {
+                    if (clientResponse.statusCode().is2xxSuccessful()) {
+                        return handleWhenResponseCodeIsSuccess(clientResponse, httpMethod, fullUriString, responseBodyClass);
+                    } else {
+                        return handleWhenResponseCodeIndicatesFailure(clientResponse, httpMethod, fullUriString);
+                    }
+                });
 
-        if (response.statusCode().is2xxSuccessful()) {
-            return handleWhenResponseCodeIsSuccess(response, httpMethod, fullUriString, responseBodyClass);
-        } else {
-            handleWhenResponseCodeIndicatesFailure(response, httpMethod, fullUriString);
-            throw new IllegalStateException("This code shouldn't be reached!");
-        }
-    }
-
-    protected <T> T handleWhenResponseCodeIsSuccess(ClientResponse response, HttpMethod httpMethod, String fullUriString, final Class<T> responseBodyClass) {
-        try {
-            T responseBody = response.bodyToMono(responseBodyClass).block();
-            logger.trace("Rest call succeeded. Url: {{} {}}, HTTP status code: {{}}",
-                    httpMethod,
-                    fullUriString,
-                    response.statusCode()
-            );
-
-            return responseBody;
-        } catch (Exception e) {
-            logger.debug("Exception while getting response body. Expected body class type: {}, Url: {{} {}}, HTTP status code: {{}}",
-                    responseBodyClass.getSimpleName(),
-                    httpMethod,
-                    fullUriString,
-                    response.statusCode()
-            );
-            throw e;
-        }
-    }
-
-    protected void handleWhenResponseCodeIndicatesFailure(ClientResponse response, HttpMethod httpMethod, String fullUriString) {
-        String responseBodyString = response.bodyToMono(String.class).block();
-        logger.error("HTTP status code indicates failure. Url: {{} {}}, HTTP status code: {{}}",
-                httpMethod,
-                fullUriString,
-                response.statusCode()
-        );
-        throw ResponseCodeIsNotSuccessApiClientException.builder()
-                .message("HTTP status code is not 2xx success")
-                .httpStatus(response.statusCode())
-                .responseBody(responseBodyString)
-                .build();
+        return responseBodyMono.block();
     }
 
     protected String createQueryStringFromHttpParameters(final Map<String, String> queryParams, final boolean disableUrlEncodingOfQueryParams) {
@@ -167,5 +130,78 @@ public class ApiCaller {
         } else {
             return String.format("%s=%s", keyToGeneratePairFor, URLEncoder.encode(value, StandardCharsets.UTF_8));
         }
+    }
+
+    protected <T> Mono<T> handleWhenResponseCodeIsSuccess(ClientResponse response, HttpMethod httpMethod, String fullUriString, final Class<T> responseBodyClass) {
+        return response
+                .bodyToMono(responseBodyClass)
+                .doOnSuccess((T responseBody) ->
+                        log.debug("Rest call succeeded. Url: {{} {}}, HTTP status code: {{}}, Parsed responseBody.toString length: {{}}",
+                                () -> httpMethod,
+                                () -> hideSecretForLogsInString(fullUriString),
+                                response::statusCode,
+                                () -> responseBody != null ? responseBody.toString().length() : "<No response body was present>"
+                        ))
+                .doOnError(throwable ->
+                        log.debug("Exception while getting response body. Expected body class type: {}, Url: {{} {}}, HTTP status code: {{}}",
+                                responseBodyClass.getSimpleName(),
+                                httpMethod,
+                                hideSecretForLogsInString(fullUriString),
+                                response.statusCode(), throwable
+                        ));
+    }
+
+    protected <T> Mono<T> handleWhenResponseCodeIndicatesFailure(ClientResponse response, HttpMethod httpMethod, String fullUriString) {
+        String locationHeader = "";
+        if (response.statusCode().is3xxRedirection()) {
+            if (!response.headers().header("Location").isEmpty()) {
+                locationHeader = response.headers().header("Location").get(0);
+            }
+        }
+        final String locationHeaderToLog = locationHeader.isEmpty() ? "" : "Header - Location: " + hideSecretForLogsInString(locationHeader) + "\n";
+
+
+        final Mono monoToReturn = response
+                .bodyToMono(String.class)
+                .flatMap((String responseBodyString) -> {//Handling if ResponseBody is present
+                    return Mono.error(ResponseCodeIsNotSuccessApiClientException.builder()
+                            .message("HTTP status code indicates failure")
+                            .httpStatus(response.statusCode())
+                            .responseBody(responseBodyString)
+                            .build());
+                })
+                .switchIfEmpty(//Handling if ResponseBody is NOT present
+                        Mono.error(ResponseCodeIsNotSuccessApiClientException.builder()
+                                .message("HTTP status code indicates failure")
+                                .httpStatus(response.statusCode())
+                                .responseBody(null)
+                                .build())
+                )
+                .doOnError((throwable) -> {
+                    if (throwable instanceof ResponseCodeIsNotSuccessApiClientException) {
+                        final String responseBodyFromException = ((ResponseCodeIsNotSuccessApiClientException) throwable).getResponseBody();
+
+                        final String responseBody = responseBodyFromException != null ? responseBodyFromException : "";
+                        final String censoredResponseBody = hideSecretForLogsInString(responseBody);
+
+                        log.error("HTTP status code indicates failure. Url: {{} {}}, HTTP status code: {{}}\nresponse:\n{}",
+                                () -> httpMethod,
+                                () -> hideSecretForLogsInString(fullUriString),
+                                response::statusCode,
+                                () -> locationHeaderToLog + censoredResponseBody
+                        );
+                    }
+                });
+        return monoToReturn;
+    }
+
+    public String hideSecretForLogsInString(String str) {
+        if (str == null)
+            return null;
+
+        for (String secret : this.secretsToHideInLogs) {
+            str = StringUtils.replace(str, secret, "[CENSORED]");
+        }
+        return str;
     }
 }

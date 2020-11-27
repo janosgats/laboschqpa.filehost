@@ -10,6 +10,6 @@ public class ApiCallerFactory {
     private final WebClient webClient;
 
     public ApiCaller create(String apiBaseUrl) {
-        return new ApiCaller(apiBaseUrl, webClient);
+        return new ApiCaller(apiBaseUrl, webClient, new String[0]);
     }
 }
