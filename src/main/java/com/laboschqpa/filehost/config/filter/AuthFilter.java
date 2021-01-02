@@ -53,6 +53,9 @@ public class AuthFilter implements Filter {
     private final QpaServerApiClient qpaServerApiClient;
     private final IndexedFileEntityRepository indexedFileEntityRepository;
 
+    @Value("${auth.interservice.key}")
+    private String authInterServiceKey;
+
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         HttpServletRequest wrappedHttpServletRequest;
@@ -191,7 +194,7 @@ public class AuthFilter implements Filter {
     }
 
     private boolean isAuthInterServiceHeaderValid(String authHeader) {
-        return authHeader.equals(System.getProperty("auth.interservice.key"));
+        return authHeader.equals(authInterServiceKey);
     }
 
     @Value("${authfilter.skip.all:false}")

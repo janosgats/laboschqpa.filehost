@@ -23,6 +23,9 @@ public class QpaServerApiClientImpl extends AbstractApiClient implements QpaServ
     @Value("${apiClient.qpaServer.sessionResolver.isUserAuthorizedToResource}")
     private String isAuthorizedToResourceUri;
 
+    @Value("${auth.interservice.key}")
+    private String authInterServiceKey;
+
     public QpaServerApiClientImpl(ApiCallerFactory apiCallerFactory) {
         super(apiCallerFactory);
     }
@@ -33,7 +36,7 @@ public class QpaServerApiClientImpl extends AbstractApiClient implements QpaServ
         cookies.add("SESSION", sessionCookieValue);
 
         HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("AuthInterService", System.getProperty("auth.interservice.key"));
+        httpHeaders.add("AuthInterService", authInterServiceKey);
         httpHeaders.add(HttpHeaders.CONTENT_TYPE, "application/json");
         try {
             return getRemoteAccountApiCaller().doCallAndThrowExceptionIfStatuscodeIsNot2xx(
