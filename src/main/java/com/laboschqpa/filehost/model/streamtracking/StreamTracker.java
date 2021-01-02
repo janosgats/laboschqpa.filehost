@@ -50,7 +50,7 @@ public class StreamTracker {
     /**
      * @return trackedValueDifference since last call to {@link StreamTracker#popTrackingIntervalState}
      */
-    public synchronized long peekTrackedValue() {
+    public synchronized long peekTrackedValueDifference() {
         return trackedValueDifference;
     }
 
