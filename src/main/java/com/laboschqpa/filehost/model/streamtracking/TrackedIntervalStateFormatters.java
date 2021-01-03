@@ -16,8 +16,8 @@ public class TrackedIntervalStateFormatters {
     public static String formatAllGbPerSecSpeedMb(TrackingIntervalState trackingIntervalState) {
         String allReadInMb = trackingNumberFormat.format(trackingIntervalState.getAbsoluteTrackedValue() / (float) COUNT_OF_BYTES_IN_A_GB);
         String readingSpeedInMbPerSec = trackingNumberFormat.format(
-                (trackingIntervalState.getTrackedValueDifference() / (float)COUNT_OF_BYTES_IN_A_MB)
-                        / (trackingIntervalState.getElapsedMillis() / (float)COUNT_OF_MILLIS_IN_A_SEC)
+                (trackingIntervalState.getTrackedValueDifference() / (float) COUNT_OF_BYTES_IN_A_MB)
+                        / (trackingIntervalState.getElapsedMillis() / (float) COUNT_OF_MILLIS_IN_A_SEC)
         );
 
         return allReadInMb + "GB - " + readingSpeedInMbPerSec + "MB/s";

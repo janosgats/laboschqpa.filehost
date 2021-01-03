@@ -8,10 +8,10 @@ import com.laboschqpa.filehost.config.filter.WrappedExternalFileServingRequestDt
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
 import com.laboschqpa.filehost.enums.apierrordescriptor.UploadApiError;
-import com.laboschqpa.filehost.exceptions.apierrordescriptor.UploadException;
 import com.laboschqpa.filehost.exceptions.apierrordescriptor.InvalidUploadRequestException;
 import com.laboschqpa.filehost.exceptions.apierrordescriptor.QuotaExceededException;
 import com.laboschqpa.filehost.exceptions.apierrordescriptor.StreamLengthLimitExceededException;
+import com.laboschqpa.filehost.exceptions.apierrordescriptor.UploadException;
 import com.laboschqpa.filehost.model.file.IndexedFile;
 import com.laboschqpa.filehost.model.file.StoredFile;
 import com.laboschqpa.filehost.model.file.factory.UploadableFileFactory;
@@ -29,7 +29,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.io.*;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -64,7 +64,7 @@ public class FileUploaderService {
         if (!StringUtils.startsWithIgnoreCase(request.getContentType(), "multipart/")) {
             throw new InvalidUploadRequestException("The request is not a multipart request.");
         }
-        InputStream uploadedFileInputStream = null;
+        TrackingInputStream uploadedFileTrackingInputStream = null;
         try {
             FileItemIterator iterator = servletFileUpload.getItemIterator(request);
             if (!iterator.hasNext()) {
@@ -79,18 +79,19 @@ public class FileUploaderService {
 
             final String normalizedFileName = normalizeUploadedFileName(uploadedFile);
 
-            uploadedFileInputStream = uploadedFile.openStream();
+            uploadedFileTrackingInputStream = trackingInputStreamFactory.createForFileUpload(uploadedFile.openStream());
+            uploadedFileTrackingInputStream.setLimit(uploadFileMaxSize);
             log.debug("Multipart file field {} with fileName {} detected.", fieldName, normalizedFileName);
 
-            IndexedFileEntity newlySavedFile = saveNewFile(request.getWrappedExternalFileServingRequestDto(), uploadedFileInputStream,
+            IndexedFileEntity newlySavedFile = saveNewFile(request.getWrappedExternalFileServingRequestDto(), uploadedFileTrackingInputStream,
                     normalizedFileName, null);//TODO: Get the initial file size approximation from a form field
-            handleStreamClose(uploadedFileInputStream, false);
+            handleStreamClose(uploadedFileTrackingInputStream, false);
             return newlySavedFile;
         } catch (InvalidUploadRequestException | QuotaExceededException e) {
-            handleStreamClose(uploadedFileInputStream, false);
+            handleStreamClose(uploadedFileTrackingInputStream, false);
             throw e;
         } catch (Exception e) {
-            handleStreamClose(uploadedFileInputStream, true);
+            handleStreamClose(uploadedFileTrackingInputStream, true);
             throw new UploadException(UploadApiError.ERROR_DURING_SAVING_FILE, "Exception occurred while saving file.", e);
         }
     }
@@ -159,15 +160,12 @@ public class FileUploaderService {
     }
 
     private IndexedFileEntity saveNewFile(WrappedExternalFileServingRequestDto wrappedExternalFileServingRequestDto,
-                                          InputStream fileUploadingInputStream, String uploadedFileName, Long approximateFileSize) {
+                                          TrackingInputStream fileUploadingTrackingInputStream, String uploadedFileName, Long approximateFileSize) {
         StoredFile newUploadableFile = null;
         try {
             newUploadableFile = uploadableFileFactory.fromFileUploadRequest(wrappedExternalFileServingRequestDto, uploadedFileName);
 
-            TrackingInputStream trackingInputStream = trackingInputStreamFactory.createForFileUpload(fileUploadingInputStream);
-            trackingInputStream.setLimit(uploadFileMaxSize);
-
-            newUploadableFile.saveFromStream(trackingInputStream, approximateFileSize);
+            newUploadableFile.saveFromStream(fileUploadingTrackingInputStream, approximateFileSize);
             log.debug("New file uploaded and saved: {}", newUploadableFile.getIndexedFileEntity().toString());
             return newUploadableFile.getIndexedFileEntity();
 
@@ -186,7 +184,7 @@ public class FileUploaderService {
                 markFileAs(IndexedFileStatus.FAILED, newUploadableFile);
                 cleanUpFile(IndexedFileStatus.CLEANED_UP_AFTER_FAILED, newUploadableFile);
             }
-            throw new UploadException(UploadApiError.ERROR_DURING_SAVING_FILE,"Exception while handling saving of the uploaded file!", e);
+            throw new UploadException(UploadApiError.ERROR_DURING_SAVING_FILE, "Exception while handling saving of the uploaded file!", e);
         }
     }
 

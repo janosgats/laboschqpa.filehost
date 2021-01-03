@@ -1,10 +1,12 @@
 package com.laboschqpa.filehost.model.streamtracking;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
-@Data
+@Getter
+@ToString
 @AllArgsConstructor
 @NoArgsConstructor
 public class TrackingIntervalState {
