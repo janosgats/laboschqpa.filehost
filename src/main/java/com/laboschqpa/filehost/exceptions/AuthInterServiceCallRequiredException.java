@@ -1,6 +1,6 @@
 package com.laboschqpa.filehost.exceptions;
 
-public class AuthInterServiceCallRequiredException extends RuntimeException {
+public class AuthInterServiceCallRequiredException extends AuthInterServiceException {
     public AuthInterServiceCallRequiredException() {
     }
 

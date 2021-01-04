@@ -1,22 +1,32 @@
 package com.laboschqpa.filehost.service.apiclient;
 
 public abstract class AbstractApiClient {
-    protected ApiCallerFactory remoteAccountApiCallerFactory;
+    private final ApiCallerFactory apiCallerFactory;
+    private final boolean useAuthInterService;
 
-    private ApiCaller remoteAccountApiCaller;
+    private ApiCaller apiCaller;
 
-    protected AbstractApiClient(ApiCallerFactory remoteAccountApiCallerFactory) {
-        this.remoteAccountApiCallerFactory = remoteAccountApiCallerFactory;
+    public AbstractApiClient(ApiCallerFactory apiCallerFactory, boolean useAuthInterService) {
+        this.apiCallerFactory = apiCallerFactory;
+        this.useAuthInterService = useAuthInterService;
     }
 
     /**
-     * Using this method to instantiate the {@link ApiCaller} so the @Value private fields can be set before they are required at the ApiCaller instantiation.
+     * Use this method to instantiate the {@link ApiCaller} so the @Value private fields can be set before they are required at the ApiCaller instantiation.
      */
-    protected ApiCaller getRemoteAccountApiCaller() {
-        if (remoteAccountApiCaller == null) {
-            remoteAccountApiCaller = remoteAccountApiCallerFactory.create(getApiBaseUrl());
+    protected ApiCaller getApiCaller() {
+        if (apiCaller == null) {
+            apiCaller = instantiateApiCaller();
         }
-        return remoteAccountApiCaller;
+        return apiCaller;
+    }
+
+    private ApiCaller instantiateApiCaller() {
+        if (useAuthInterService) {
+            return apiCallerFactory.createForAuthInterService(getApiBaseUrl());
+        } else {
+            return apiCallerFactory.createGeneral(getApiBaseUrl());
+        }
     }
 
     protected abstract String getApiBaseUrl();

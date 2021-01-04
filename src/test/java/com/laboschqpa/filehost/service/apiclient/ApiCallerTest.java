@@ -2,6 +2,7 @@ package com.laboschqpa.filehost.service.apiclient;
 
 import com.laboschqpa.filehost.config.AppConfig;
 import com.laboschqpa.filehost.exceptions.apiclient.ResponseCodeIsNotSuccessApiClientException;
+import com.laboschqpa.filehost.service.authinterservice.AuthInterServiceCrypto;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -9,6 +10,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -26,10 +30,15 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
+@ExtendWith(MockitoExtension.class)
 class ApiCallerTest {
     private static final String[] secretsToHideInLogs = {"testSecretToHideInLog"};
+
+    @Mock
+    private AuthInterServiceCrypto authInterServiceCrypto;
 
     private WebClient webClient = new AppConfig().webClient();
     private ApiCaller apiCaller;
@@ -49,7 +58,7 @@ class ApiCallerTest {
 
     @BeforeEach
     void beforeEach() {
-        apiCaller = spy(new ApiCaller("http://localhost:" + mockWebServer.getPort(), webClient, secretsToHideInLogs));
+        apiCaller = spy(new ApiCaller("http://localhost:" + mockWebServer.getPort(), webClient, secretsToHideInLogs, authInterServiceCrypto));
     }
 
     @Test
@@ -68,6 +77,9 @@ class ApiCallerTest {
 
         final String expectedResponseBody = "expected response body is here";
 
+        doReturn("generatedKeyToReturn")
+                .when(authInterServiceCrypto).generateHeader();
+
         mockWebServer.enqueue(new MockResponse()
                 .setBody(expectedResponseBody));
 
@@ -83,7 +95,8 @@ class ApiCallerTest {
 
         assertEquals(httpMethod.name(), recordedRequest.getMethod());
         assertEquals("value1", recordedRequest.getHeader("key1"));
-        assertEquals("keyA=valueA", recordedRequest.getHeader("Cookie"));
+
+        assertEquals("generatedKeyToReturn", recordedRequest.getHeader("AuthInterService"));
 
         assertEquals(requestBodyString, new String(recordedRequest.getBody().readByteArray()));
         assertEquals(expectedResponseBody, actualResponseBody);
@@ -103,6 +116,9 @@ class ApiCallerTest {
         headers.add("key1", "value1");
         final boolean disableUrlEncodingOfQueryParams = false;
 
+        doReturn("generatedKeyToReturn")
+                .when(authInterServiceCrypto).generateHeader();
+
         mockWebServer.enqueue(new MockResponse()
                 .setResponseCode(200));
 
@@ -118,7 +134,8 @@ class ApiCallerTest {
 
         assertEquals(httpMethod.name(), recordedRequest.getMethod());
         assertEquals("value1", recordedRequest.getHeader("key1"));
-        assertEquals("keyA=valueA", recordedRequest.getHeader("Cookie"));
+
+        assertEquals("generatedKeyToReturn", recordedRequest.getHeader("AuthInterService"));
 
         assertEquals(requestBodyString, new String(recordedRequest.getBody().readByteArray()));
         assertNull(actualResponseBody);

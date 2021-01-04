@@ -2,6 +2,7 @@ package com.laboschqpa.filehost.service.apiclient;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.laboschqpa.filehost.exceptions.apiclient.ResponseCodeIsNotSuccessApiClientException;
+import com.laboschqpa.filehost.service.authinterservice.AuthInterServiceCrypto;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpHeaders;
@@ -22,15 +23,27 @@ import java.util.stream.Collectors;
 
 @Log4j2
 public class ApiCaller {
+    private static final String HEADER_NAME_AUTH_INTER_SERVICE = "AuthInterService";
+
     private String apiBaseUrl;
     private WebClient webClient;
+    private final boolean useAuthInterService;
+    private AuthInterServiceCrypto authInterServiceCrypto;
     private String[] secretsToHideInLogs;
 
     public ApiCaller(String apiBaseUrl, WebClient webClient, String[] secretsToHideInLogs) {
-
+        this.useAuthInterService = false;
         this.apiBaseUrl = apiBaseUrl;
         this.webClient = webClient;
         this.secretsToHideInLogs = secretsToHideInLogs;
+    }
+
+    public ApiCaller(String apiBaseUrl, WebClient webClient, String[] secretsToHideInLogs, AuthInterServiceCrypto authInterServiceCrypto) {
+        this.useAuthInterService = true;
+        this.apiBaseUrl = apiBaseUrl;
+        this.webClient = webClient;
+        this.secretsToHideInLogs = secretsToHideInLogs;
+        this.authInterServiceCrypto = authInterServiceCrypto;
     }
 
     public <T> T doCallAndThrowExceptionIfStatuscodeIsNot2xx(final Class<T> responseBodyClass, String uriPath, HttpMethod httpMethod) {
@@ -79,6 +92,15 @@ public class ApiCaller {
 
     public <T> T doCallAndThrowExceptionIfStatuscodeIsNot2xx(final Class<T> responseBodyClass, String uriPath, HttpMethod httpMethod, Map<String, String> queryParams,
                                                              BodyInserter<?, ? super ClientHttpRequest> requestBodyInserter, HttpHeaders headers, MultiValueMap<String, String> cookies, final boolean disableUrlEncodingOfQueryParams) {
+        if (headers == null) {
+            return doCallAndThrowExceptionIfStatuscodeIsNot2xx(responseBodyClass, uriPath, httpMethod, queryParams,
+                    requestBodyInserter, new HttpHeaders(), cookies, disableUrlEncodingOfQueryParams);
+        }
+
+        if (this.useAuthInterService) {
+            headers.add(HEADER_NAME_AUTH_INTER_SERVICE, authInterServiceCrypto.generateHeader());
+        }
+
         if (requestBodyInserter == null)
             requestBodyInserter = BodyInserters.empty();
 

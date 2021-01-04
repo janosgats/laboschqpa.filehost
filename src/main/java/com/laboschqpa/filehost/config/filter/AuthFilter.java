@@ -11,6 +11,7 @@ import com.laboschqpa.filehost.repo.dto.IndexedFileOnlyJpaDto;
 import com.laboschqpa.filehost.service.apiclient.qpaserver.QpaServerApiClient;
 import com.laboschqpa.filehost.service.apiclient.qpaserver.dto.IsUserAuthorizedToResourceRequestDto;
 import com.laboschqpa.filehost.service.apiclient.qpaserver.dto.IsUserAuthorizedToResourceResponseDto;
+import com.laboschqpa.filehost.service.authinterservice.AuthInterServiceCrypto;
 import com.laboschqpa.filehost.util.ServletHelper;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -52,9 +53,7 @@ public class AuthFilter implements Filter {
 
     private final QpaServerApiClient qpaServerApiClient;
     private final IndexedFileEntityRepository indexedFileEntityRepository;
-
-    @Value("${auth.interservice.key}")
-    private String authInterServiceKey;
+    private final AuthInterServiceCrypto authInterServiceCrypto;
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
@@ -109,7 +108,7 @@ public class AuthFilter implements Filter {
 
         switch (authMethod) {
             case AUTH_INTER_SERVICE: {
-                if (isAuthInterServiceHeaderValid(authInterServiceHeader)) {
+                if (authInterServiceCrypto.isHeaderValid(authInterServiceHeader)) {
                     logger.trace("AuthFilter auth is valid for call between services.");
                     return new AuthWrappedHttpServletRequest(httpServletRequest, authMethod, null);
                 } else {
@@ -191,10 +190,6 @@ public class AuthFilter implements Filter {
             }
         }
         throw new InvalidHttpRequestException("Cannot found session cookie! You are probably not logged in.");
-    }
-
-    private boolean isAuthInterServiceHeaderValid(String authHeader) {
-        return authHeader.equals(authInterServiceKey);
     }
 
     @Value("${authfilter.skip.all:false}")
