@@ -10,18 +10,22 @@ public class ReadOnlyStreamTracker implements StreamTracker {
         this.delegate = delegate;
     }
 
+    @Override
     public Function<TrackingIntervalState, String> getTrackingIntervalStateFormatter() {
         return delegate.getTrackingIntervalStateFormatter();
     }
 
+    @Override
     public long peekTrackedValueDifference() {
         return delegate.peekTrackedValueDifference();
     }
 
+    @Override
     public long peekElapsedTime() {
         return delegate.peekElapsedTime();
     }
 
+    @Override
     public long getAbsoluteTrackedValue() {
         return delegate.getAbsoluteTrackedValue();
     }
