@@ -5,5 +5,5 @@ import com.laboschqpa.filehost.service.apiclient.qpaserver.dto.IsUserAuthorizedT
 
 public interface QpaServerApiClient
 {
-    IsUserAuthorizedToResourceResponseDto getIsAuthorizedToResource(String sessionCookieValue, IsUserAuthorizedToResourceRequestDto isUserAuthorizedToResourceRequestDto);
+    IsUserAuthorizedToResourceResponseDto getIsUserAuthorizedToResource(IsUserAuthorizedToResourceRequestDto isUserAuthorizedToResourceRequestDto);
 }

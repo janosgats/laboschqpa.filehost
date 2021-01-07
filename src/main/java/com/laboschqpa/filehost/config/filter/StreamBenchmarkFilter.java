@@ -14,7 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 
 @Component
-@Order(1)
+@Order(2)
 @RequiredArgsConstructor
 public class StreamBenchmarkFilter implements Filter {
     private static final Logger logger = LoggerFactory.getLogger(StreamBenchmarkFilter.class);

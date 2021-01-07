@@ -2,7 +2,6 @@ package com.laboschqpa.filehost.service.apiclient.qpaserver.dto;
 
 import com.laboschqpa.filehost.enums.FileAccessType;
 import lombok.*;
-import org.springframework.http.HttpMethod;
 
 @Data
 @Builder
@@ -10,7 +9,10 @@ import org.springframework.http.HttpMethod;
 @NoArgsConstructor
 @ToString
 public class IsUserAuthorizedToResourceRequestDto {
-    private HttpMethod httpMethod;
+    /**
+     * Unencoded (NOT Base64 encoded) session ID
+     */
+    private String sessionId;
     private String csrfToken;
     private FileAccessType fileAccessType;
     private Long indexedFileId;

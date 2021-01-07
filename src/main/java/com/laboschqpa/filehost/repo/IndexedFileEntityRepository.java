@@ -22,13 +22,14 @@ public interface IndexedFileEntityRepository extends JpaRepository<IndexedFileEn
     Optional<IndexedFileOnlyJpaDto> findOnlyFromIndexedFileTableById(@Param("id") Long id);
 
     default IndexedFileOnlyJpaDto getValidExistingAvailableIndexedFileOnlyJpaDto(Long indexedFileId) {
-        Optional<IndexedFileOnlyJpaDto> indexedFileOnlyJpaDtoOptional = this.findOnlyFromIndexedFileTableById(indexedFileId);
+        final Optional<IndexedFileOnlyJpaDto> indexedFileOnlyJpaDtoOptional = this.findOnlyFromIndexedFileTableById(indexedFileId);
 
         if (indexedFileOnlyJpaDtoOptional.isEmpty()) {
             throw new ContentNotFoundException("File with id "
                     + indexedFileId + " does not exist!");
         }
-        IndexedFileOnlyJpaDto indexedFileOnlyJpaDto = indexedFileOnlyJpaDtoOptional.get();
+
+        final IndexedFileOnlyJpaDto indexedFileOnlyJpaDto = indexedFileOnlyJpaDtoOptional.get();
         if (indexedFileOnlyJpaDto.getStatus() != IndexedFileStatus.AVAILABLE) {
             throw new FileServingException(FileServingApiError.FILE_IS_NOT_AVAILABLE, "File with id "
                     + indexedFileId + " is found, but it's not available!");

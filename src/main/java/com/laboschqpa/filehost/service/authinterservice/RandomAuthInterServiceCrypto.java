@@ -33,6 +33,10 @@ public class RandomAuthInterServiceCrypto implements AuthInterServiceCrypto {
     public RandomAuthInterServiceCrypto(@Value("${auth.interservice.key}") String authInterServiceKey,
                                         @Value("${auth.interservice.manualKey:null}") String authInterServiceManualKey,
                                         @Value("${auth.interservice.enableManualKey:false}") boolean enableManualKey) {
+        if (StringUtils.isBlank(authInterServiceKey)) {
+            throw new AuthInterServiceException("AuthInterService key is blank!");
+        }
+
         this.authInterServiceManualKey = authInterServiceManualKey;
         this.enableManualKey = enableManualKey;
 

@@ -1,7 +1,6 @@
 package com.laboschqpa.filehost.service.apiclient.qpaserver;
 
 import com.laboschqpa.filehost.annotation.ExceptionWrappedApiClient;
-import com.laboschqpa.filehost.exceptions.apiclient.ResponseCodeIsNotSuccessApiClientException;
 import com.laboschqpa.filehost.service.apiclient.AbstractApiClient;
 import com.laboschqpa.filehost.service.apiclient.ApiCallerFactory;
 import com.laboschqpa.filehost.service.apiclient.qpaserver.dto.IsUserAuthorizedToResourceRequestDto;
@@ -10,7 +9,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.reactive.function.BodyInserters;
 
 @Service
@@ -28,29 +26,19 @@ public class QpaServerApiClientImpl extends AbstractApiClient implements QpaServ
     }
 
     @Override
-    public IsUserAuthorizedToResourceResponseDto getIsAuthorizedToResource(String sessionCookieValue, IsUserAuthorizedToResourceRequestDto isUserAuthorizedToResourceRequestDto) {
-        LinkedMultiValueMap<String, String> cookies = new LinkedMultiValueMap<>();
-        cookies.add("SESSION", sessionCookieValue);
+    public IsUserAuthorizedToResourceResponseDto getIsUserAuthorizedToResource(IsUserAuthorizedToResourceRequestDto isUserAuthorizedToResourceRequestDto) {
 
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.add(HttpHeaders.CONTENT_TYPE, "application/json");
-        try {
-            return getApiCaller().doCallAndThrowExceptionIfStatuscodeIsNot2xx(
-                    IsUserAuthorizedToResourceResponseDto.class,
-                    isAuthorizedToResourceUri,
-                    HttpMethod.GET,
-                    null,
-                    BodyInserters.fromValue(isUserAuthorizedToResourceRequestDto),
-                    httpHeaders,
-                    cookies,
-                    false
-            );
-        } catch (ResponseCodeIsNotSuccessApiClientException e) {
-            if (e.getHttpStatus() != null && e.getHttpStatus().is3xxRedirection())
-                return IsUserAuthorizedToResourceResponseDto.builder().authenticated(false).authorized(false).build();//The user isn't logged in so got redirected.
-            else
-                throw e;
-        }
+
+        return getApiCaller().doCallAndThrowExceptionIfStatuscodeIsNot2xx(
+                IsUserAuthorizedToResourceResponseDto.class,
+                isAuthorizedToResourceUri,
+                HttpMethod.GET,
+                null,
+                BodyInserters.fromValue(isUserAuthorizedToResourceRequestDto),
+                httpHeaders
+        );
     }
 
 

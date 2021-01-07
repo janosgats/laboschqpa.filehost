@@ -1,10 +1,9 @@
 package com.laboschqpa.filehost.model.file.factory;
 
-import com.laboschqpa.filehost.config.filter.WrappedExternalFileServingRequestDto;
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
 import com.laboschqpa.filehost.entity.StoredFileEntity;
-import com.laboschqpa.filehost.exceptions.apierrordescriptor.ContentNotFoundException;
 import com.laboschqpa.filehost.exceptions.InvalidHttpRequestException;
+import com.laboschqpa.filehost.exceptions.apierrordescriptor.ContentNotFoundException;
 import com.laboschqpa.filehost.model.file.DownloadableFile;
 import com.laboschqpa.filehost.model.file.StoredFile;
 import com.laboschqpa.filehost.repo.IndexedFileEntityRepository;
@@ -24,8 +23,7 @@ public class DownloadableFileFactory {
         return new StoredFile(storedFileUtils, storedFileEntity, null, null);
     }
 
-    public DownloadableFile from(WrappedExternalFileServingRequestDto wrappedExternalFileServingRequestDto) {
-        Long indexedFileId = wrappedExternalFileServingRequestDto.getIndexedFileId();
+    public DownloadableFile from(Long indexedFileId) {
         Optional<IndexedFileEntity> indexedFileOptional = indexedFileEntityRepository.findById(indexedFileId);
 
         if (indexedFileOptional.isEmpty())
@@ -36,6 +34,6 @@ public class DownloadableFileFactory {
         if (indexedFileEntity instanceof StoredFileEntity)
             return from((StoredFileEntity) indexedFileEntity);
 
-        throw new InvalidHttpRequestException("Cannot create ServiceableFile from DownloadableFile: " + wrappedExternalFileServingRequestDto.toString());
+        throw new InvalidHttpRequestException("Cannot create DownloadableFile from indexedFileId: " + indexedFileId);
     }
 }

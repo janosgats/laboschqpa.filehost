@@ -13,7 +13,10 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Objects;
@@ -99,7 +102,10 @@ public class StoredFile implements DownloadableFile, DeletableFile, UploadableFi
 
     @Override
     public String getETag() {
-        return storedFileEntity.getETag();
+        return String.format("\"%s_%s\"",
+                storedFileEntity.getCreationTime().getEpochSecond(),
+                storedFileEntity.getStatus().getValue().toString()
+        );
     }
 
     @Override

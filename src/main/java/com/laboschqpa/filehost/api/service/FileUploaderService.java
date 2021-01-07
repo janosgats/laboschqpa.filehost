@@ -3,8 +3,7 @@
 package com.laboschqpa.filehost.api.service;
 
 import com.laboschqpa.filehost.annotation.ExceptionWrappedFileServingClass;
-import com.laboschqpa.filehost.config.filter.AuthWrappedHttpServletRequest;
-import com.laboschqpa.filehost.config.filter.WrappedExternalFileServingRequestDto;
+import com.laboschqpa.filehost.api.dto.FileUploadRequest;
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
 import com.laboschqpa.filehost.enums.apierrordescriptor.UploadApiError;
@@ -29,6 +28,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.time.ZoneId;
@@ -60,13 +60,13 @@ public class FileUploaderService {
      *
      * @return {@code indexedFileEntity} of the newly uploaded file
      */
-    public IndexedFileEntity uploadFile(AuthWrappedHttpServletRequest request) {
-        if (!StringUtils.startsWithIgnoreCase(request.getContentType(), "multipart/")) {
+    public IndexedFileEntity uploadFile(FileUploadRequest fileUploadRequest,  HttpServletRequest httpServletRequest) {
+        if (!StringUtils.startsWithIgnoreCase(httpServletRequest.getContentType(), "multipart/")) {
             throw new InvalidUploadRequestException("The request is not a multipart request.");
         }
         TrackingInputStream uploadedFileTrackingInputStream = null;
         try {
-            FileItemIterator iterator = servletFileUpload.getItemIterator(request);
+            FileItemIterator iterator = servletFileUpload.getItemIterator(httpServletRequest);
             if (!iterator.hasNext()) {
                 throw new InvalidUploadRequestException("No fields present in the multipart request!");
             }
@@ -83,7 +83,7 @@ public class FileUploaderService {
             uploadedFileTrackingInputStream.setLimit(uploadFileMaxSize);
             log.debug("Multipart file field {} with fileName {} detected.", fieldName, normalizedFileName);
 
-            IndexedFileEntity newlySavedFile = saveNewFile(request.getWrappedExternalFileServingRequestDto(), uploadedFileTrackingInputStream,
+            IndexedFileEntity newlySavedFile = saveNewFile(fileUploadRequest, uploadedFileTrackingInputStream,
                     normalizedFileName, null);//TODO: Get the initial file size approximation from a form field
             handleStreamClose(uploadedFileTrackingInputStream, false);
             return newlySavedFile;
@@ -159,11 +159,11 @@ public class FileUploaderService {
         }
     }
 
-    private IndexedFileEntity saveNewFile(WrappedExternalFileServingRequestDto wrappedExternalFileServingRequestDto,
+    private IndexedFileEntity saveNewFile(FileUploadRequest fileUploadRequest,
                                           TrackingInputStream fileUploadingTrackingInputStream, String uploadedFileName, Long approximateFileSize) {
         StoredFile newUploadableFile = null;
         try {
-            newUploadableFile = uploadableFileFactory.fromFileUploadRequest(wrappedExternalFileServingRequestDto, uploadedFileName);
+            newUploadableFile = uploadableFileFactory.fromFileUploadRequest(fileUploadRequest, uploadedFileName);
 
             newUploadableFile.saveFromStream(fileUploadingTrackingInputStream, approximateFileSize);
             log.debug("New file uploaded and saved: {}", newUploadableFile.getIndexedFileEntity().toString());
