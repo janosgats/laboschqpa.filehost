@@ -1,15 +1,13 @@
 package com.laboschqpa.filehost.entity;
 
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 
 import javax.persistence.*;
 import java.time.Instant;
 
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
 @ToString(callSuper = true)

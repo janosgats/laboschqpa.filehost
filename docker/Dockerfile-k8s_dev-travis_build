@@ -1,12 +1,14 @@
-FROM maven:3 AS builder_image
+FROM gradle:jdk11-openj9 AS builder_image
 
 WORKDIR /app
 
-COPY pom.xml ./
-RUN mvn dependency:go-offline
+COPY build.gradle ./
+COPY settings.gradle ./
+RUN gradle resolveDependencies --no-daemon
+
 COPY src ./src/
 
-RUN mvn package
+RUN gradle bootJar test --no-daemon
 
 #################### Stage 2 ####################################
 FROM openjdk:11
@@ -37,5 +39,5 @@ HEALTHCHECK --interval=15s \
 
 #CMD ["java", "-jar", "-Dspring.profiles.active=k8s_dev", "laboschqpa.filehost.jar"]
 
-COPY --from=builder_image --chown=spring-user:spring-user /app/target/laboschqpa.filehost.jar ${APP_HOME}/laboschqpa.filehost.jar
+COPY --from=builder_image --chown=spring-user:spring-user /app/build/libs/laboschqpa.filehost.jar ${APP_HOME}/laboschqpa.filehost.jar
 USER spring-user
