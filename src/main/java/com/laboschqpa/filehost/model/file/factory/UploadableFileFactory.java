@@ -8,7 +8,6 @@ import com.laboschqpa.filehost.repo.LocalDiskFileEntityRepository;
 import com.laboschqpa.filehost.service.LocalDiskFileSaver;
 import com.laboschqpa.filehost.util.LocalDiskFileUtils;
 import lombok.RequiredArgsConstructor;
-import org.apache.tika.detect.Detector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -23,13 +22,12 @@ public class UploadableFileFactory {
     private final LocalDiskFileUtils localDiskFileUtils;
     private final LocalDiskFileEntityRepository localDiskFileEntityRepository;
     private final LocalDiskFileSaver localDiskFileSaver;
-    private final Detector tikaDetector;
 
     public LocalDiskFile fromFileUploadRequest(FileUploadRequest fileUploadRequest, String originalFileName) {
         LocalDiskFileEntity localDiskFileEntity = createStoredFileEntityForUploadedFile(fileUploadRequest, originalFileName);
         logger.trace("Created localDiskFileEntity for file upload: {}", localDiskFileEntity);
 
-        return new LocalDiskFile(localDiskFileUtils, localDiskFileEntity, localDiskFileSaver, tikaDetector, false);
+        return new LocalDiskFile(localDiskFileUtils, localDiskFileEntity, localDiskFileSaver, false);
     }
 
     private LocalDiskFileEntity createStoredFileEntityForUploadedFile(FileUploadRequest fileUploadRequest, String originalFileName) {

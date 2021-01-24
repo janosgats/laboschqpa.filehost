@@ -13,7 +13,7 @@ import java.io.OutputStream;
 
 @Log4j2
 @RequiredArgsConstructor
-public class TrackingInputStream extends CountingInputStream {
+public class TrackingInputStream extends InputStream implements CountingInputStreamInterface {
 
     /**
      * {@link StreamTracker#addToTrackedValue(long)} method is synchronized to be threadsafe,
@@ -29,10 +29,17 @@ public class TrackingInputStream extends CountingInputStream {
 
     /**
      * NOT thread-safe implementation
+     *
      * @return Total amount of bytes read by this stream.
      */
+    @Override
     public long getCountOfReadBytes() {
         return countOfReadBytes;
+    }
+
+    @Override
+    public InputStream getInputStream() {
+        return this;
     }
 
     /**

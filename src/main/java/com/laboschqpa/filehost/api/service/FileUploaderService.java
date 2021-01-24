@@ -11,17 +11,21 @@ import com.laboschqpa.filehost.exceptions.apierrordescriptor.QuotaExceededExcept
 import com.laboschqpa.filehost.exceptions.apierrordescriptor.StreamLengthLimitExceededException;
 import com.laboschqpa.filehost.exceptions.apierrordescriptor.UploadException;
 import com.laboschqpa.filehost.model.file.IndexedFile;
-import com.laboschqpa.filehost.model.file.LocalDiskFile;
+import com.laboschqpa.filehost.model.file.UploadableFile;
 import com.laboschqpa.filehost.model.file.factory.UploadableFileFactory;
-import com.laboschqpa.filehost.model.inputstream.QuotaAllocatingInputStream;
-import com.laboschqpa.filehost.model.inputstream.TrackingInputStream;
+import com.laboschqpa.filehost.model.inputstream.*;
+import com.laboschqpa.filehost.model.streamtracking.QuotaAllocatingInputStreamFactory;
 import com.laboschqpa.filehost.model.streamtracking.TrackingInputStreamFactory;
 import com.laboschqpa.filehost.model.upload.FileUploadRequest;
 import com.laboschqpa.filehost.repo.IndexedFileEntityRepository;
-import com.laboschqpa.filehost.service.IndexedFileQuotaAllocator;
 import com.laboschqpa.filehost.util.FileUploadUtils;
+import com.laboschqpa.filehost.util.IOExceptionUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.tika.detect.Detector;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tomcat.util.http.fileupload.FileItemIterator;
 import org.apache.tomcat.util.http.fileupload.FileItemStream;
 import org.apache.tomcat.util.http.fileupload.MultipartStream;
@@ -32,12 +36,16 @@ import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.InputStream;
+import java.io.SequenceInputStream;
 
 @Log4j2
 @RequiredArgsConstructor
 @Service
 @ExceptionWrappedFileServingClass
 public class FileUploaderService {
+    private static final int MB = 1000 * 1000;
+    private static final int TIKA_REREADABLE_STREAM_MAX_BYTES_IN_MEMORY = 1 * MB;
+
     private final ServletFileUpload servletFileUpload = new ServletFileUpload();
 
     @Value("${filehost.upload.filemaxsize}")
@@ -46,7 +54,8 @@ public class FileUploaderService {
     private final UploadableFileFactory uploadableFileFactory;
     private final IndexedFileEntityRepository indexedFileEntityRepository;
     private final TrackingInputStreamFactory trackingInputStreamFactory;
-    private final IndexedFileQuotaAllocator indexedFileQuotaAllocator;
+    private final QuotaAllocatingInputStreamFactory quotaAllocatingInputStreamFactory;
+    private final Detector tikaDetector;
 
     /**
      * Allows uploading exactly one file in a multipart request.
@@ -111,18 +120,17 @@ public class FileUploaderService {
 
     private IndexedFileEntity saveNewFile(FileUploadRequest fileUploadRequest,
                                           InputStream fileUploadingInputStream, String uploadedFileName, Long approximateFileSize) {
-        LocalDiskFile newUploadableFile = null;
+        UploadableFile newUploadableFile = null;
         try {
             newUploadableFile = uploadableFileFactory.fromFileUploadRequest(fileUploadRequest, uploadedFileName);
 
             final QuotaAllocatingInputStream quotaAllocatingInputStream
-                    = new QuotaAllocatingInputStream(fileUploadingInputStream, newUploadableFile.getIndexedFileEntity(),
-                    indexedFileQuotaAllocator, approximateFileSize);
+                    = quotaAllocatingInputStreamFactory.from(fileUploadingInputStream, newUploadableFile.getEntity(), approximateFileSize);
 
-            newUploadableFile.saveFromStream(quotaAllocatingInputStream);
-            log.debug("New file uploaded and saved: {}", newUploadableFile.getIndexedFileEntity().toString());
-            return newUploadableFile.getIndexedFileEntity();
+            detectMimeTypeAndPersist(quotaAllocatingInputStream, newUploadableFile);
 
+            log.debug("New file uploaded and saved: {}", newUploadableFile.getEntity().toString());
+            return newUploadableFile.getEntity();
         } catch (StreamLengthLimitExceededException | QuotaExceededException e) {
             log.info("File upload was aborted! indexedFileId: {}", getFileIdToPrintOnFailure(newUploadableFile), e);
 
@@ -142,18 +150,70 @@ public class FileUploaderService {
         }
     }
 
+    void detectMimeTypeAndPersist(CountingInputStreamInterface fileUploadingStream, UploadableFile uploadableFile) {
+        final IndexedFileEntity fileEntity = uploadableFile.getEntity();
+
+        fileEntity.setStatus(IndexedFileStatus.PRE_UPLOAD_PROCESSING);
+        indexedFileEntityRepository.save(fileEntity);
+
+        final MemoryReleasingRereadableInputStream rereadableInputStream
+                = new MemoryReleasingRereadableInputStream(fileUploadingStream.getInputStream(), TIKA_REREADABLE_STREAM_MAX_BYTES_IN_MEMORY,
+                false, false);
+        try {
+            log.trace("Bytes read before MIME type detection: {}", fileUploadingStream.getCountOfReadBytes());
+            detectMimeTypeByTika(new NonCloseableInputStream(rereadableInputStream), fileEntity);
+            log.trace("Bytes read after MIME type detection: {}", fileUploadingStream.getCountOfReadBytes());
+
+            IOExceptionUtils.wrap(rereadableInputStream::rewind, "Cannot rewind rereadableInputStream after Tika MIME type detection.");
+
+            SequenceInputStream sequenceInputStream = new SequenceInputStream(rereadableInputStream, fileUploadingStream.getInputStream());
+
+            fileEntity.setStatus(IndexedFileStatus.UPLOADING);
+            indexedFileEntityRepository.save(fileEntity);
+            try {
+                uploadableFile.saveFromStream(sequenceInputStream);
+            } finally {
+                fileEntity.setSize(fileUploadingStream.getCountOfReadBytes());
+                indexedFileEntityRepository.save(fileEntity);
+            }
+
+            fileEntity.setStatus(IndexedFileStatus.AVAILABLE);
+            indexedFileEntityRepository.save(fileEntity);
+        } finally {
+            //Only closing this stream to free the memory buffer
+            IOExceptionUtils.swallowAndLog(rereadableInputStream::close,
+                    "Error while closing RereadableInputStream to clean up the temporary file");
+        }
+
+    }
+
+    private void detectMimeTypeByTika(InputStream inputStream, IndexedFileEntity indexedFileEntity) {
+        try (TikaInputStream tikaInputStream = TikaInputStream.get(inputStream)) {
+            Metadata metadata = new Metadata();
+            metadata.add(Metadata.RESOURCE_NAME_KEY, indexedFileEntity.getOriginalFileName());
+            MediaType detectedMediaType = tikaDetector.detect(tikaInputStream, metadata);
+
+            log.trace("Detected MIME type: {}", detectedMediaType.toString());
+
+            indexedFileEntity.setMimeType(detectedMediaType.getType() + "/" + detectedMediaType.getSubtype());
+            indexedFileEntityRepository.save(indexedFileEntity);
+        } catch (Exception e) {
+            log.error("Exception during Apache Tika mime type detection!", e);
+        }
+    }
+
     private static String getFileIdToPrintOnFailure(IndexedFile indexedFile) {
-        if (indexedFile != null && indexedFile.getIndexedFileEntity() != null)
-            return String.valueOf(indexedFile.getIndexedFileEntity().getId());
+        if (indexedFile != null && indexedFile.getEntity() != null)
+            return String.valueOf(indexedFile.getEntity().getId());
         else
             return "null";
     }
 
-    private void cleanUpFile(IndexedFileStatus statusAfterSuccessfulCleanup, LocalDiskFile localDiskFile) {
+    private void cleanUpFile(IndexedFileStatus statusAfterSuccessfulCleanup, UploadableFile uploadableFile) {
         try {
-            localDiskFile.cleanUpFailedUpload();
-            markFileAs(statusAfterSuccessfulCleanup, localDiskFile);
-            log.trace("File {} cleaned up: {}", localDiskFile.getIndexedFileEntity().getId(), statusAfterSuccessfulCleanup);
+            uploadableFile.cleanUpFailedUpload();
+            markFileAs(statusAfterSuccessfulCleanup, uploadableFile);
+            log.trace("File {} cleaned up: {}", uploadableFile.getEntity().getId(), statusAfterSuccessfulCleanup);
         } catch (Exception ex) {
             log.error("Couldn't clean up file after failed upload!", ex);
         }
@@ -161,8 +221,8 @@ public class FileUploaderService {
 
     private void markFileAs(IndexedFileStatus statusToMarkAs, IndexedFile indexedFile) {
         try {
-            indexedFile.getIndexedFileEntity().setStatus(statusToMarkAs);
-            indexedFileEntityRepository.save(indexedFile.getIndexedFileEntity());
+            indexedFile.getEntity().setStatus(statusToMarkAs);
+            indexedFileEntityRepository.save(indexedFile.getEntity());
         } catch (Exception ex) {
             log.error("Exception while marking uploaded file as {}", statusToMarkAs, ex);
         }

@@ -36,6 +36,10 @@ import java.time.Instant;
         columnDefinition = "TINYINT"
 )
 public class IndexedFileEntity {
+    public IndexedFileEntity(Long id) {
+        this.id = id;
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

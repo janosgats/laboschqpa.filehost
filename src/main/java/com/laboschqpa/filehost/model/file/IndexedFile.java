@@ -9,7 +9,7 @@ public interface IndexedFile {
     /**
      * @return The corresponding {@link IndexedFileEntity}.
      */
-    IndexedFileEntity getIndexedFileEntity();
+    IndexedFileEntity getEntity();
 
     /**
      * Gets if the file is available for download. E.g. it's not under postprocessing.
@@ -20,7 +20,7 @@ public interface IndexedFile {
      * Gets the {@link IndexedFileStatus} of the file.
      */
     default IndexedFileStatus getStatus(){
-        return getIndexedFileEntity().getStatus();
+        return getEntity().getStatus();
     }
 
     /**

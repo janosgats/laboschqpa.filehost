@@ -20,7 +20,7 @@ public class DownloadableFileFactory {
     private final LocalDiskFileUtils localDiskFileUtils;
 
     public LocalDiskFile from(LocalDiskFileEntity localDiskFileEntity) {
-        return new LocalDiskFile(localDiskFileUtils, localDiskFileEntity, null, null);
+        return new LocalDiskFile(localDiskFileUtils, localDiskFileEntity, null);
     }
 
     public DownloadableFile from(Long indexedFileId) {

@@ -20,7 +20,7 @@ public class DeletableFileFactory {
     private final LocalDiskFileUtils localDiskFileUtils;
 
     public LocalDiskFile from(LocalDiskFileEntity localDiskFileEntity) {
-        return new LocalDiskFile(localDiskFileUtils, localDiskFileEntity, null, null, false);
+        return new LocalDiskFile(localDiskFileUtils, localDiskFileEntity, null, false);
     }
 
     public DeletableFile fromIndexedFileId(Long indexedFileId) {

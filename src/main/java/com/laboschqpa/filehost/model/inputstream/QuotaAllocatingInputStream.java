@@ -9,21 +9,28 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 @RequiredArgsConstructor
-public class QuotaAllocatingInputStream extends CountingInputStream {
+public class QuotaAllocatingInputStream extends InputStream implements CountingInputStreamInterface {
     private final InputStream wrappedInputStream;
     private final IndexedFileEntity indexedFileEntity;
-    private final IndexedFileQuotaAllocator indexedFileQuotaAllocator;
     private final Long approximateFileSize;
+    private final IndexedFileQuotaAllocator indexedFileQuotaAllocator;
 
     private long countOfReadBytes = 0;
     private long allAllocatedBytes = 0;
 
     /**
      * NOT thread-safe implementation
+     *
      * @return Total amount of bytes read by this stream.
      */
+    @Override
     public long getCountOfReadBytes() {
         return countOfReadBytes;
+    }
+
+    @Override
+    public InputStream getInputStream() {
+        return this;
     }
 
     private void proceedAllocation(long newlyReadBytes) {

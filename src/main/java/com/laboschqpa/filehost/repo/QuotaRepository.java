@@ -55,7 +55,7 @@ public interface QuotaRepository extends JpaRepository<Quota, Long> {
 
                 indexedFileStatusAttributeConverter.convertToDatabaseColumn(IndexedFileStatus.ADDED_TO_DATABASE_INDEX),
                 indexedFileStatusAttributeConverter.convertToDatabaseColumn(IndexedFileStatus.UPLOADING),
-                indexedFileStatusAttributeConverter.convertToDatabaseColumn(IndexedFileStatus.UPLOADED),
+                indexedFileStatusAttributeConverter.convertToDatabaseColumn(IndexedFileStatus.UPLOAD_STREAM_SAVED),
                 indexedFileStatusAttributeConverter.convertToDatabaseColumn(IndexedFileStatus.AVAILABLE),
                 indexedFileStatusAttributeConverter.convertToDatabaseColumn(IndexedFileStatus.FAILED),
                 indexedFileStatusAttributeConverter.convertToDatabaseColumn(IndexedFileStatus.ABORTED_BY_FILE_HOST),
