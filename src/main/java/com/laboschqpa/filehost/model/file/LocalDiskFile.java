@@ -49,7 +49,7 @@ public class LocalDiskFile implements DownloadableFile, DeletableFile, Uploadabl
 
         if (assertFileCurrentlyExists) {
             if (!isFileCurrentlyExisting())
-                throw new FileServingException(FileServingApiError.INVALID_STORED_FILE, "File from storedFileEntity is not a valid file: " + file.getAbsolutePath());
+                throw new FileServingException(FileServingApiError.INVALID_STORED_FILE, "File from localDiskFileEntity is not a valid file: " + file.getAbsolutePath());
         }
     }
 

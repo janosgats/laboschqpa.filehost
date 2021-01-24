@@ -6,9 +6,9 @@ import com.laboschqpa.filehost.model.streamtracking.StreamTracker;
 import com.laboschqpa.filehost.model.streamtracking.StreamTrackerImpl;
 import com.laboschqpa.filehost.model.streamtracking.TrackedIntervalStateFormatters;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.Ignore;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -30,7 +30,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Ignore
+@Disabled
 @ExtendWith(MockitoExtension.class)
 public class S3 {
     private static final String BUCKET_NAME = "laboschqpa";

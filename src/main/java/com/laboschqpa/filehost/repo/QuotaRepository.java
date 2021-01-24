@@ -18,17 +18,15 @@ public interface QuotaRepository extends JpaRepository<Quota, Long> {
     QuotaSubjectCategoryAttributeConverter quotaSubjectCategoryAttributeConverter = new QuotaSubjectCategoryAttributeConverter();
 
     @Query(value = "select * " +
-            "from (select owner_user_id as subjectId, :categoryEnumVal_USER as subjectCategoryVal, coalesce(sum(stored_file.size), 0) as usedBytes " +
-            "      from stored_file " +
-            "               join indexed_file on stored_file.id = indexed_file.id " +
+            "from (select owner_user_id as subjectId, :categoryEnumVal_USER as subjectCategoryVal, coalesce(sum(indexed_file.size), 0) as usedBytes " +
+            "      from indexed_file " +
             "      where status in (:statusEnumVal_ADDED_TO_DATABASE_INDEX, :statusEnumVal_UPLOADING, :statusEnumVal_UPLOADED, :statusEnumVal_AVAILABLE, :statusEnumVal_FAILED, :statusEnumVal_ABORTED_BY_FILE_HOST, :statusEnumVal_FAILED_DURING_DELETION) " +
             "        and owner_user_id = :ownerUserId " +
             "     ) as user " +
             "UNION ALL " +
             "select * " +
-            "from (select owner_team_id as subjectId, :categoryEnumVal_TEAM as subjectCategoryVal, coalesce(sum(stored_file.size), 0) as usedBytes " +
-            "      from stored_file " +
-            "               join indexed_file on stored_file.id = indexed_file.id " +
+            "from (select owner_team_id as subjectId, :categoryEnumVal_TEAM as subjectCategoryVal, coalesce(sum(indexed_file.size), 0) as usedBytes " +
+            "      from indexed_file " +
             "      where status in (:statusEnumVal_ADDED_TO_DATABASE_INDEX, :statusEnumVal_UPLOADING, :statusEnumVal_UPLOADED, :statusEnumVal_AVAILABLE, :statusEnumVal_FAILED, :statusEnumVal_ABORTED_BY_FILE_HOST) " +
             "        and owner_team_id = :ownerTeamId " +
             "     ) as team;",

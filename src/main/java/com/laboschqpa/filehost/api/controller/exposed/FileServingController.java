@@ -1,10 +1,12 @@
 package com.laboschqpa.filehost.api.controller.exposed;
 
-import com.laboschqpa.filehost.api.dto.FileUploadRequest;
+import com.laboschqpa.filehost.api.dto.FileUploadResponseDto;
 import com.laboschqpa.filehost.api.service.FileDownloaderService;
 import com.laboschqpa.filehost.api.service.FileUploaderService;
 import com.laboschqpa.filehost.config.AppConstants;
+import com.laboschqpa.filehost.entity.IndexedFileEntity;
 import com.laboschqpa.filehost.enums.FileAccessType;
+import com.laboschqpa.filehost.model.upload.FileUploadRequest;
 import com.laboschqpa.filehost.service.fileservingauth.AuthorizeRequestResult;
 import com.laboschqpa.filehost.service.fileservingauth.FileServingUserAuthorizerService;
 import lombok.RequiredArgsConstructor;
@@ -33,14 +35,14 @@ public class FileServingController {
     }
 
     @PostMapping("/**")
-    public Long postUpload(HttpServletRequest httpServletRequest) {
+    public FileUploadResponseDto postUpload(HttpServletRequest httpServletRequest) {
         final AuthorizeRequestResult authorizeRequestReturn
                 = fileServingUserAuthorizerService.authorizeRequestOrThrow(null, FileAccessType.CREATE_NEW, httpServletRequest);
 
-        return fileUploaderService.uploadFile(
-                new FileUploadRequest(authorizeRequestReturn.getLoggedInUserId(),
-                        authorizeRequestReturn.getLoggedInUserTeamId()),
-                httpServletRequest
-        ).getId();
+        final FileUploadRequest fileUploadRequest
+                = new FileUploadRequest(authorizeRequestReturn.getLoggedInUserId(), authorizeRequestReturn.getLoggedInUserTeamId());
+
+        IndexedFileEntity createdFile = fileUploaderService.uploadFile(fileUploadRequest, httpServletRequest);
+        return new FileUploadResponseDto(createdFile.getId());
     }
 }

@@ -1,46 +1,32 @@
-package com.laboschqpa.filehost.api.service;
+package com.laboschqpa.filehost.util;
 
 import org.apache.tomcat.util.http.fileupload.FileItemHeaders;
 import org.apache.tomcat.util.http.fileupload.FileItemStream;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Spy;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@ExtendWith(MockitoExtension.class)
-class FileUploaderServiceTest {
-
-    @Spy
-    @InjectMocks
-    FileUploaderService fileUploaderService;
+class FileUploadUtilsTest {
 
     @Test
-    void normalizeUploadedFileName() throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
-        Method method = FileUploaderService.class.getDeclaredMethod("normalizeUploadedFileName", FileItemStream.class);
-        method.setAccessible(true);
-
+    void createNormalizedFileName() {
         FileItemStream fileItemStream = createFileItemStreamWhichReturnsName("x/x/y.z");
-        String result = (String) method.invoke(fileUploaderService, fileItemStream);
+        String result = FileUploadUtils.createNormalizedFileName(fileItemStream);
         assertEquals("y.z", result);
 
         fileItemStream = createFileItemStreamWhichReturnsName("x\\x\\y.z");
-        result = (String) method.invoke(fileUploaderService, fileItemStream);
+        result = FileUploadUtils.createNormalizedFileName(fileItemStream);
         assertEquals("y.z", result);
 
         fileItemStream = createFileItemStreamWhichReturnsName("x/x\\x/x\\y.z");
-        result = (String) method.invoke(fileUploaderService, fileItemStream);
+        result = FileUploadUtils.createNormalizedFileName(fileItemStream);
         assertEquals("y.z", result);
 
         fileItemStream = createFileItemStreamWhichReturnsName("  y.z  ");
-        result = (String) method.invoke(fileUploaderService, fileItemStream);
+        result = FileUploadUtils.createNormalizedFileName(fileItemStream);
         assertEquals("y.z", result);
     }
 

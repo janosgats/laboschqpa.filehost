@@ -11,8 +11,7 @@ import javax.persistence.*;
 import java.time.Instant;
 
 /**
- * Every file/stream that's served by the FileHost webservice has to be indexed by adding it to this entity.
- * Files that are stored 'locally' by the webservice are instances of the "StoredFileEntity" subclass.
+ * Every file/stream that's served by the FileHost webservice has to be indexed by adding it to this table.
  */
 @SuperBuilder
 @NoArgsConstructor
@@ -21,12 +20,13 @@ import java.time.Instant;
 @Entity
 @Table(name = "indexed_file",
         indexes = {
-                @Index(columnList = "owner_team_id, creation_time", name = "owner_team__creation_time"),
+                @Index(columnList = "owner_team_id, size, creation_time", name = "owner_team__size__creation_time"),
                 @Index(columnList = "owner_user_id, owner_team_id, creation_time", name = "owner_user__owner_team__creation_time"),
                 @Index(columnList = "status, owner_team_id, creation_time", name = "status__owner_team__creation_time"),
                 @Index(columnList = "status, owner_user_id, owner_team_id, creation_time", name = "status__owner_user__owner_team__creation_time"),
                 @Index(columnList = "mime_type, creation_time", name = "mime_type__creation_time"),
-                @Index(columnList = "creation_time", name = "creation_time")
+                @Index(columnList = "creation_time", name = "creation_time"),
+                @Index(columnList = "size, owner_user_id, owner_team_id", name = "size__owner_user__owner_team")
         }
 )
 @Inheritance(strategy = InheritanceType.JOINED)

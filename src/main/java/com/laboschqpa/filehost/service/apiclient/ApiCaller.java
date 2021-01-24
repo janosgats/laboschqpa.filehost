@@ -119,8 +119,7 @@ public class ApiCaller {
                     if (headers != null)
                         httpHeaders.addAll(headers);
                 })
-                .exchange()
-                .flatMap((clientResponse) -> {
+                .exchangeToMono((clientResponse) -> {
                     if (clientResponse.statusCode().is2xxSuccessful()) {
                         return handleWhenResponseCodeIsSuccess(clientResponse, httpMethod, fullUriString, responseBodyClass);
                     } else {

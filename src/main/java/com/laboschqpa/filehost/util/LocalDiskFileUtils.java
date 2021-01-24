@@ -5,6 +5,7 @@ import com.laboschqpa.filehost.enums.apierrordescriptor.FileServingApiError;
 import com.laboschqpa.filehost.exceptions.apierrordescriptor.FileServingException;
 import com.laboschqpa.filehost.repo.LocalDiskFileEntityRepository;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -18,27 +19,27 @@ import java.util.Objects;
 public class LocalDiskFileUtils {
     private static final String ACTIVE_MOUNT_NAME = "mnt1";
 
-    @Value("${filehost.storedfiles.basepath}")
-    private String storedFilesBasePath;
+    @Value("${filehost.localdiskfile.basepath}")
+    private String localDiskFileBasePath;
 
     private final LocalDiskFileEntityRepository localDiskFileEntityRepository;
 
-    public String getFullPathFromStoredFileEntityPath(String storedFileEntityPath) {
-        if (storedFileEntityPath == null || storedFileEntityPath.isBlank()) {
-            throw new FileServingException(FileServingApiError.INVALID_STORED_FILE, "storedFileEntityPath is null or blank!");
+    public String getFullPathFromStoredFileEntityPath(String localDiskFileEntityPath) {
+        if (StringUtils.isBlank(localDiskFileEntityPath)) {
+            throw new FileServingException(FileServingApiError.INVALID_STORED_FILE, "localDiskFileEntityPath is blank!");
         }
-        return Path.of(storedFilesBasePath, storedFileEntityPath).toString();
+        return Path.of(localDiskFileBasePath, localDiskFileEntityPath).toString();
     }
 
-    public String generateNewStoredFileEntityPath(Long storedFileEntityId) {
-        Objects.requireNonNull(storedFileEntityId, "storedFileEntityId cannot be null when generation new file path!");
+    public String generateNewLocalDiskFileEntityPath(Long localDiskFileEntityId) {
+        Objects.requireNonNull(localDiskFileEntityId, "localDiskFileEntity cannot be null when generation new file path!");
         ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of("UTC"));
         return Path.of(
                 ACTIVE_MOUNT_NAME,
                 String.valueOf(zonedDateTime.getYear()),
                 String.valueOf(zonedDateTime.getMonthValue()),
                 String.valueOf(zonedDateTime.getDayOfMonth()),
-                "f_" + storedFileEntityId + ".sf"
+                "f_" + localDiskFileEntityId + ".sf"
         ).toString();
     }
 

@@ -3,7 +3,6 @@
 package com.laboschqpa.filehost.api.service;
 
 import com.laboschqpa.filehost.annotation.ExceptionWrappedFileServingClass;
-import com.laboschqpa.filehost.api.dto.FileUploadRequest;
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
 import com.laboschqpa.filehost.enums.apierrordescriptor.UploadApiError;
@@ -17,6 +16,7 @@ import com.laboschqpa.filehost.model.file.factory.UploadableFileFactory;
 import com.laboschqpa.filehost.model.inputstream.QuotaAllocatingInputStream;
 import com.laboschqpa.filehost.model.inputstream.TrackingInputStream;
 import com.laboschqpa.filehost.model.streamtracking.TrackingInputStreamFactory;
+import com.laboschqpa.filehost.model.upload.FileUploadRequest;
 import com.laboschqpa.filehost.repo.IndexedFileEntityRepository;
 import com.laboschqpa.filehost.service.IndexedFileQuotaAllocator;
 import com.laboschqpa.filehost.util.FileUploadUtils;
@@ -40,7 +40,7 @@ import java.io.InputStream;
 public class FileUploaderService {
     private final ServletFileUpload servletFileUpload = new ServletFileUpload();
 
-    @Value("${filehost.storedfiles.upload.filemaxsize}")
+    @Value("${filehost.upload.filemaxsize}")
     private Long uploadFileMaxSize;
 
     private final UploadableFileFactory uploadableFileFactory;

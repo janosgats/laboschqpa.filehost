@@ -1,4 +1,4 @@
-package com.laboschqpa.filehost.api.dto;
+package com.laboschqpa.filehost.model.upload;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

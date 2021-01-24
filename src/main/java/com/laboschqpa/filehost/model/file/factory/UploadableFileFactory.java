@@ -1,9 +1,9 @@
 package com.laboschqpa.filehost.model.file.factory;
 
-import com.laboschqpa.filehost.api.dto.FileUploadRequest;
 import com.laboschqpa.filehost.entity.LocalDiskFileEntity;
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
 import com.laboschqpa.filehost.model.file.LocalDiskFile;
+import com.laboschqpa.filehost.model.upload.FileUploadRequest;
 import com.laboschqpa.filehost.repo.LocalDiskFileEntityRepository;
 import com.laboschqpa.filehost.service.LocalDiskFileSaver;
 import com.laboschqpa.filehost.util.LocalDiskFileUtils;
@@ -27,7 +27,7 @@ public class UploadableFileFactory {
 
     public LocalDiskFile fromFileUploadRequest(FileUploadRequest fileUploadRequest, String originalFileName) {
         LocalDiskFileEntity localDiskFileEntity = createStoredFileEntityForUploadedFile(fileUploadRequest, originalFileName);
-        logger.trace("Created storedFileEntity for file upload: {}", localDiskFileEntity);
+        logger.trace("Created localDiskFileEntity for file upload: {}", localDiskFileEntity);
 
         return new LocalDiskFile(localDiskFileUtils, localDiskFileEntity, localDiskFileSaver, tikaDetector, false);
     }
@@ -42,7 +42,7 @@ public class UploadableFileFactory {
                 .build();
 
         localDiskFileEntityRepository.save(localDiskFileEntity);//Saving the entity to get the file ID by AutoIncrement
-        localDiskFileEntity.setPath(localDiskFileUtils.generateNewStoredFileEntityPath(localDiskFileEntity.getId()));
+        localDiskFileEntity.setPath(localDiskFileUtils.generateNewLocalDiskFileEntityPath(localDiskFileEntity.getId()));
         localDiskFileEntityRepository.save(localDiskFileEntity);
 
         return localDiskFileEntity;
