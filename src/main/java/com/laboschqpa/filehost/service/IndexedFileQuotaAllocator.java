@@ -1,21 +1,20 @@
 package com.laboschqpa.filehost.service;
 
+import com.laboschqpa.filehost.entity.IndexedFileEntity;
 import com.laboschqpa.filehost.entity.Quota;
-import com.laboschqpa.filehost.entity.StoredFileEntity;
 import com.laboschqpa.filehost.enums.QuotaSubjectCategory;
 import com.laboschqpa.filehost.enums.apierrordescriptor.QuotaExceededApiError;
 import com.laboschqpa.filehost.enums.apierrordescriptor.UploadApiError;
+import com.laboschqpa.filehost.exceptions.apierrordescriptor.QuotaExceededException;
 import com.laboschqpa.filehost.exceptions.apierrordescriptor.UploadException;
-import com.laboschqpa.filehost.repo.dto.QuotaResourceUsageJpaDto;
-import com.laboschqpa.filehost.model.streamtracking.TrackingInputStream;
+import com.laboschqpa.filehost.repo.IndexedFileEntityRepository;
 import com.laboschqpa.filehost.repo.QuotaRepository;
-import com.laboschqpa.filehost.repo.StoredFileEntityRepository;
+import com.laboschqpa.filehost.repo.dto.QuotaResourceUsageJpaDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
-import com.laboschqpa.filehost.exceptions.apierrordescriptor.QuotaExceededException;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,9 +22,12 @@ import java.util.Optional;
 @Log4j2
 @RequiredArgsConstructor
 @Service
-public class StoredFileQuotaAllocator {
+public class IndexedFileQuotaAllocator {
+    private static final int KB = 1000;//Bytes in a KiloByte
+    private static final int MB = 1000 * 1000;//Bytes in a MegaByte
+
     private final QuotaRepository quotaRepository;
-    private final StoredFileEntityRepository storedFileEntityRepository;
+    private final IndexedFileEntityRepository indexedFileEntityRepository;
 
     @Value("${quota.default.user}")
     private Long defaultUserQuotaLimitBytes;
@@ -33,14 +35,14 @@ public class StoredFileQuotaAllocator {
     private Long defaultTeamQuotaLimitBytes;
 
     /**
-     * @return The amount of allocated bytes.
+     * @return All bytes allocated for the resource.
      * @throws QuotaExceededException if no quota left
      */
-    public long allocateQuota(StoredFileEntity storedFileEntity, TrackingInputStream trackingInputStream, Long approximateFileSize) {
-        final Quota userQuota = getQuota(QuotaSubjectCategory.USER, storedFileEntity.getOwnerUserId());
-        final Quota teamQuota = getQuota(QuotaSubjectCategory.TEAM, storedFileEntity.getOwnerTeamId());
+    public long allocateQuota(IndexedFileEntity indexedFileEntity, long bytesReadSoFar, Long approximateFileSize) {
+        final Quota userQuota = getQuota(QuotaSubjectCategory.USER, indexedFileEntity.getOwnerUserId());
+        final Quota teamQuota = getQuota(QuotaSubjectCategory.TEAM, indexedFileEntity.getOwnerTeamId());
 
-        final Pair<QuotaResourceUsageJpaDto, QuotaResourceUsageJpaDto> resourceUsages = getQuotaResourceUsage(storedFileEntity);
+        final Pair<QuotaResourceUsageJpaDto, QuotaResourceUsageJpaDto> resourceUsages = getQuotaResourceUsage(indexedFileEntity);
         final QuotaResourceUsageJpaDto userResourceUsageBefore = resourceUsages.getFirst();
         final QuotaResourceUsageJpaDto teamResourceUsageBefore = resourceUsages.getSecond();
 
@@ -49,8 +51,8 @@ public class StoredFileQuotaAllocator {
         final long userFreeBytes = userQuota.getLimitBytes() - userResourceUsageBefore.getUsedBytes();
         final long teamFreeBytes = teamQuota.getLimitBytes() - teamResourceUsageBefore.getUsedBytes();
 
-        if (approximateFileSize != null && trackingInputStream.getCountOfReadBytes() < (approximateFileSize * 0.9d)) {
-            long newBytesToAllocate = approximateFileSize - trackingInputStream.getCountOfReadBytes();
+        if (approximateFileSize != null && bytesReadSoFar < (approximateFileSize * 0.9d)) {
+            long newBytesToAllocate = approximateFileSize - bytesReadSoFar;
 
             if (userFreeBytes < newBytesToAllocate) {
                 throw new QuotaExceededException(QuotaExceededApiError.USER_QUOTA_EXCEEDED,
@@ -61,46 +63,47 @@ public class StoredFileQuotaAllocator {
                         "Uploading the file would exceed team storage quota!");
             }
 
-            long completeFileSize = trackingInputStream.getCountOfReadBytes() + newBytesToAllocate;
-            allocateBytes(completeFileSize, storedFileEntity, userQuota, teamQuota);
-            return newBytesToAllocate;
+            long completeFileSize = bytesReadSoFar + newBytesToAllocate;
+            allocateBytes(completeFileSize, indexedFileEntity, userQuota, teamQuota);
+            return completeFileSize;
         } else if (approximateFileSize != null) {
             final long wantedNewBytes;
-            if (approximateFileSize / (double) trackingInputStream.getCountOfReadBytes() < 2) {
+            if (approximateFileSize / (double) bytesReadSoFar < 2) {
                 wantedNewBytes = (long) (approximateFileSize * 0.34d);
             } else {
-                wantedNewBytes = (long) (trackingInputStream.getCountOfReadBytes() * 0.34d);
+                wantedNewBytes = (long) (bytesReadSoFar * 0.34d);
             }
 
-            final long newBytesToAllocate = limitBytesAccordingToFreeSpace(wantedNewBytes, userFreeBytes, teamFreeBytes);
-            final long completeFileSize = trackingInputStream.getCountOfReadBytes() + newBytesToAllocate;
-            allocateBytes(completeFileSize, storedFileEntity, userQuota, teamQuota);
-            return newBytesToAllocate;
-        } else {
-            final long wantedNewBytes;
-            if (trackingInputStream.getCountOfReadBytes() < 13 * 1000 * 1000) {
-                wantedNewBytes = 5 * 1000 * 1000;
-            } else {
-                wantedNewBytes = (long) (trackingInputStream.getCountOfReadBytes() * 0.34d);
-            }
-
-            final long newBytesToAllocate = limitBytesAccordingToFreeSpace(wantedNewBytes, userFreeBytes, teamFreeBytes);
-            final long completeFileSize = trackingInputStream.getCountOfReadBytes() + newBytesToAllocate;
-            allocateBytes(completeFileSize, storedFileEntity, userQuota, teamQuota);
-            return newBytesToAllocate;
+            final long newBytesToAllocate = limitWantedBytesAccordingToFreeSpace(wantedNewBytes, userFreeBytes, teamFreeBytes);
+            final long completeFileSize = bytesReadSoFar + newBytesToAllocate;
+            allocateBytes(completeFileSize, indexedFileEntity, userQuota, teamQuota);
+            return completeFileSize;
         }
+
+        final long wantedNewBytes;
+        if (bytesReadSoFar < 13 * MB) {
+            wantedNewBytes = 5 * MB;
+        } else {
+            wantedNewBytes = (long) (bytesReadSoFar * 0.34d);
+        }
+
+        final long newBytesToAllocate = limitWantedBytesAccordingToFreeSpace(wantedNewBytes, userFreeBytes, teamFreeBytes);
+        final long completeFileSize = bytesReadSoFar + newBytesToAllocate;
+        allocateBytes(completeFileSize, indexedFileEntity, userQuota, teamQuota);
+        return completeFileSize;
+
         //TODO: Eliminate the magic numbers!
     }
 
-    private long limitBytesAccordingToFreeSpace(long wantedNewBytes, long userFreeBytes, long teamFreeBytes) {
+    private long limitWantedBytesAccordingToFreeSpace(long wantedNewBytes, long userFreeBytes, long teamFreeBytes) {
         final long userLimitedBytes = Math.min(wantedNewBytes, (long) (userFreeBytes * 0.99d));
         final long teamLimitedBytes = Math.min(wantedNewBytes, (long) (teamFreeBytes * 0.99d));
 
-        if (userLimitedBytes < 1000) {
+        if (userLimitedBytes < KB) {
             throw new QuotaExceededException(QuotaExceededApiError.USER_QUOTA_EXCEEDED,
                     "User storage quota is exceeded! Cannot allocate more space.");
         }
-        if (teamLimitedBytes < 1000) {
+        if (teamLimitedBytes < KB) {
             throw new QuotaExceededException(QuotaExceededApiError.TEAM_QUOTA_EXCEEDED,
                     "Team storage quota is exceeded! Cannot allocate more space.");
         }
@@ -108,17 +111,17 @@ public class StoredFileQuotaAllocator {
         return Math.min(userLimitedBytes, teamLimitedBytes);
     }
 
-    private void allocateBytes(long completeFileSize, StoredFileEntity storedFileEntity, Quota userQuota, Quota teamQuota) {
-        storedFileEntity.setSize(completeFileSize);
-        storedFileEntityRepository.save(storedFileEntity);
+    private void allocateBytes(long completeFileSize, IndexedFileEntity indexedFileEntity, Quota userQuota, Quota teamQuota) {
+        indexedFileEntity.setSize(completeFileSize);
+        indexedFileEntityRepository.save(indexedFileEntity);
 
-        final Pair<QuotaResourceUsageJpaDto, QuotaResourceUsageJpaDto> resourceUsages = getQuotaResourceUsage(storedFileEntity);
+        final Pair<QuotaResourceUsageJpaDto, QuotaResourceUsageJpaDto> resourceUsages = getQuotaResourceUsage(indexedFileEntity);
         final QuotaResourceUsageJpaDto userResourceUsageBefore = resourceUsages.getFirst();
         final QuotaResourceUsageJpaDto teamResourceUsageBefore = resourceUsages.getSecond();
 
         assertQuotaIsNotExceeded(userQuota, userResourceUsageBefore, teamQuota, teamResourceUsageBefore);
         log.trace("Allocated storage for file: {}, user: {}, team: {}. completeFileSize: {}MB",
-                storedFileEntity.getId(), userQuota.getSubjectId(), teamQuota.getSubjectId(), completeFileSize / 1000000d);
+                indexedFileEntity.getId(), userQuota.getSubjectId(), teamQuota.getSubjectId(), (double) completeFileSize / MB);
     }
 
     private void assertQuotaIsNotExceeded(Quota userQuota, QuotaResourceUsageJpaDto userResourceUsage, Quota teamQuota, QuotaResourceUsageJpaDto teamResourceUsage) {
@@ -138,10 +141,9 @@ public class StoredFileQuotaAllocator {
 
     private Quota getQuota(QuotaSubjectCategory subjectCategory, Long subjectId) {
         Optional<Quota> quotaOptional = quotaRepository.findBySubjectCategoryAndSubjectId(subjectCategory, subjectId);
-        if (quotaOptional.isPresent()) {
-            return quotaOptional.get();
-        } else {
-            Quota quota = new Quota();
+
+        return quotaOptional.orElseGet(() -> {
+            final Quota quota = new Quota();
             quota.setSubjectCategory(subjectCategory);
             quota.setSubjectId(subjectId);
 
@@ -158,12 +160,12 @@ public class StoredFileQuotaAllocator {
 
             quotaRepository.save(quota);
             return quota;
-        }
+        });
     }
 
-    private Pair<QuotaResourceUsageJpaDto, QuotaResourceUsageJpaDto> getQuotaResourceUsage(StoredFileEntity storedFileEntity) {
+    private Pair<QuotaResourceUsageJpaDto, QuotaResourceUsageJpaDto> getQuotaResourceUsage(IndexedFileEntity indexedFileEntity) {
         List<QuotaResourceUsageJpaDto> resourceUsage
-                = quotaRepository.getResourceQuotaUsage(storedFileEntity.getOwnerUserId(), storedFileEntity.getOwnerTeamId());
+                = quotaRepository.getResourceQuotaUsage(indexedFileEntity.getOwnerUserId(), indexedFileEntity.getOwnerTeamId());
 
         QuotaResourceUsageJpaDto userResourceUsage = null, teamResourceUsage = null;
         for (QuotaResourceUsageJpaDto item : resourceUsage) {

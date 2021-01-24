@@ -2,7 +2,7 @@ package com.laboschqpa.filehost.api.service;
 
 import com.laboschqpa.filehost.model.file.DownloadableFile;
 import com.laboschqpa.filehost.model.file.factory.DownloadableFileFactory;
-import com.laboschqpa.filehost.model.streamtracking.TrackingInputStream;
+import com.laboschqpa.filehost.model.inputstream.TrackingInputStream;
 import com.laboschqpa.filehost.model.streamtracking.TrackingInputStreamFactory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

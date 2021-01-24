@@ -5,7 +5,7 @@ import com.laboschqpa.filehost.enums.apierrordescriptor.FileServingApiError;
 import com.laboschqpa.filehost.exceptions.apierrordescriptor.FileServingException;
 import com.laboschqpa.filehost.model.file.DownloadableFile;
 import com.laboschqpa.filehost.model.file.factory.DownloadableFileFactory;
-import com.laboschqpa.filehost.model.streamtracking.TrackingInputStream;
+import com.laboschqpa.filehost.model.inputstream.TrackingInputStream;
 import com.laboschqpa.filehost.model.streamtracking.TrackingInputStreamFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;

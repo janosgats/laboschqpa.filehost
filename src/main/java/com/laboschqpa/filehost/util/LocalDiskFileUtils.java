@@ -1,9 +1,9 @@
 package com.laboschqpa.filehost.util;
 
-import com.laboschqpa.filehost.entity.StoredFileEntity;
+import com.laboschqpa.filehost.entity.LocalDiskFileEntity;
 import com.laboschqpa.filehost.enums.apierrordescriptor.FileServingApiError;
 import com.laboschqpa.filehost.exceptions.apierrordescriptor.FileServingException;
-import com.laboschqpa.filehost.repo.StoredFileEntityRepository;
+import com.laboschqpa.filehost.repo.LocalDiskFileEntityRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -15,13 +15,13 @@ import java.util.Objects;
 
 @RequiredArgsConstructor
 @Service
-public class StoredFileUtils {
+public class LocalDiskFileUtils {
     private static final String ACTIVE_MOUNT_NAME = "mnt1";
 
     @Value("${filehost.storedfiles.basepath}")
     private String storedFilesBasePath;
 
-    private final StoredFileEntityRepository storedFileEntityRepository;
+    private final LocalDiskFileEntityRepository localDiskFileEntityRepository;
 
     public String getFullPathFromStoredFileEntityPath(String storedFileEntityPath) {
         if (storedFileEntityPath == null || storedFileEntityPath.isBlank()) {
@@ -42,7 +42,7 @@ public class StoredFileUtils {
         ).toString();
     }
 
-    public StoredFileEntity saveStoredFileEntity(StoredFileEntity storedFileEntity) {
-        return storedFileEntityRepository.save(storedFileEntity);
+    public LocalDiskFileEntity saveLocalDiskFileEntity(LocalDiskFileEntity localDiskFileEntity) {
+        return localDiskFileEntityRepository.save(localDiskFileEntity);
     }
 }

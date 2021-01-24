@@ -1,5 +1,6 @@
 package com.laboschqpa.filehost.model.streamtracking;
 
+import com.laboschqpa.filehost.model.inputstream.TrackingInputStream;
 import com.laboschqpa.filehost.service.GlobalStreamTrackerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

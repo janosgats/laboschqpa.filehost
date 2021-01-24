@@ -1,6 +1,7 @@
-package com.laboschqpa.filehost.model.streamtracking;
+package com.laboschqpa.filehost.model.inputstream;
 
 import com.laboschqpa.filehost.exceptions.apierrordescriptor.StreamLengthLimitExceededException;
+import com.laboschqpa.filehost.model.streamtracking.StreamTracker;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -12,7 +13,7 @@ import java.io.OutputStream;
 
 @Log4j2
 @RequiredArgsConstructor
-public class TrackingInputStream extends InputStream {
+public class TrackingInputStream extends CountingInputStream {
 
     /**
      * {@link StreamTracker#addToTrackedValue(long)} method is synchronized to be threadsafe,
@@ -24,8 +25,15 @@ public class TrackingInputStream extends InputStream {
     private final InputStream wrappedInputStream;
     private final StreamTracker streamTracker;
 
-    @Getter
     private long countOfReadBytes = 0;
+
+    /**
+     * NOT thread-safe implementation
+     * @return Total amount of bytes read by this stream.
+     */
+    public long getCountOfReadBytes() {
+        return countOfReadBytes;
+    }
 
     /**
      * Stream length limit in bytes.<br>

@@ -1,6 +1,6 @@
 package com.laboschqpa.filehost.config.filter;
 
-import com.laboschqpa.filehost.model.streamtracking.TrackingInputStream;
+import com.laboschqpa.filehost.model.inputstream.TrackingInputStream;
 import com.laboschqpa.filehost.model.streamtracking.TrackingInputStreamFactory;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;

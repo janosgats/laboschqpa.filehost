@@ -2,7 +2,10 @@ package com.laboschqpa.filehost.entity;
 
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
 import com.laboschqpa.filehost.enums.attributeconverter.IndexedFileStatusAttributeConverter;
-import lombok.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
 import javax.persistence.*;
 import java.time.Instant;
@@ -11,6 +14,7 @@ import java.time.Instant;
  * Every file/stream that's served by the FileHost webservice has to be indexed by adding it to this entity.
  * Files that are stored 'locally' by the webservice are instances of the "StoredFileEntity" subclass.
  */
+@SuperBuilder
 @NoArgsConstructor
 @Data
 @ToString
@@ -32,13 +36,6 @@ import java.time.Instant;
         columnDefinition = "TINYINT"
 )
 public class IndexedFileEntity {
-    public IndexedFileEntity(IndexedFileStatus status, Long ownerUserId, Long ownerTeamId, Instant creationTime) {
-        this.status = status;
-        this.ownerUserId = ownerUserId;
-        this.ownerTeamId = ownerTeamId;
-        this.creationTime = creationTime;
-    }
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -59,4 +56,10 @@ public class IndexedFileEntity {
 
     @Column(name = "mime_type")
     private String mimeType;
+
+    @JoinColumn(name = "size")
+    private Long size;//Size in Bytes
+
+    @Column(name = "original_file_name")
+    private String originalFileName;
 }

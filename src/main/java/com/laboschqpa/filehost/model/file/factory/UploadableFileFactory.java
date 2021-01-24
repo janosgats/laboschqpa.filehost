@@ -1,12 +1,12 @@
 package com.laboschqpa.filehost.model.file.factory;
 
 import com.laboschqpa.filehost.api.dto.FileUploadRequest;
-import com.laboschqpa.filehost.entity.StoredFileEntity;
+import com.laboschqpa.filehost.entity.LocalDiskFileEntity;
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
-import com.laboschqpa.filehost.model.file.StoredFile;
-import com.laboschqpa.filehost.repo.StoredFileEntityRepository;
-import com.laboschqpa.filehost.service.QuotaAllocatingStoredFileSaver;
-import com.laboschqpa.filehost.util.StoredFileUtils;
+import com.laboschqpa.filehost.model.file.LocalDiskFile;
+import com.laboschqpa.filehost.repo.LocalDiskFileEntityRepository;
+import com.laboschqpa.filehost.service.LocalDiskFileSaver;
+import com.laboschqpa.filehost.util.LocalDiskFileUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.tika.detect.Detector;
 import org.slf4j.Logger;
@@ -20,20 +20,20 @@ import java.time.Instant;
 public class UploadableFileFactory {
     private static final Logger logger = LoggerFactory.getLogger(UploadableFileFactory.class);
 
-    private final StoredFileUtils storedFileUtils;
-    private final StoredFileEntityRepository storedFileEntityRepository;
-    private final QuotaAllocatingStoredFileSaver quotaAllocatingStoredFileSaver;
+    private final LocalDiskFileUtils localDiskFileUtils;
+    private final LocalDiskFileEntityRepository localDiskFileEntityRepository;
+    private final LocalDiskFileSaver localDiskFileSaver;
     private final Detector tikaDetector;
 
-    public StoredFile fromFileUploadRequest(FileUploadRequest fileUploadRequest, String originalFileName) {
-        StoredFileEntity storedFileEntity = createStoredFileEntityForUploadedFile(fileUploadRequest, originalFileName);
-        logger.trace("Created storedFileEntity for file upload: {}", storedFileEntity);
+    public LocalDiskFile fromFileUploadRequest(FileUploadRequest fileUploadRequest, String originalFileName) {
+        LocalDiskFileEntity localDiskFileEntity = createStoredFileEntityForUploadedFile(fileUploadRequest, originalFileName);
+        logger.trace("Created storedFileEntity for file upload: {}", localDiskFileEntity);
 
-        return new StoredFile(storedFileUtils, storedFileEntity, quotaAllocatingStoredFileSaver, tikaDetector, false);
+        return new LocalDiskFile(localDiskFileUtils, localDiskFileEntity, localDiskFileSaver, tikaDetector, false);
     }
 
-    private StoredFileEntity createStoredFileEntityForUploadedFile(FileUploadRequest fileUploadRequest, String originalFileName) {
-        StoredFileEntity storedFileEntity = StoredFileEntity.builder()
+    private LocalDiskFileEntity createStoredFileEntityForUploadedFile(FileUploadRequest fileUploadRequest, String originalFileName) {
+        LocalDiskFileEntity localDiskFileEntity = LocalDiskFileEntity.builder()
                 .status(IndexedFileStatus.ADDED_TO_DATABASE_INDEX)
                 .originalFileName(originalFileName)
                 .ownerUserId(fileUploadRequest.getLoggedInUserId())
@@ -41,10 +41,10 @@ public class UploadableFileFactory {
                 .creationTime(Instant.now())
                 .build();
 
-        storedFileEntityRepository.save(storedFileEntity);//Saving the entity to get the file ID by AutoIncrement
-        storedFileEntity.setPath(storedFileUtils.generateNewStoredFileEntityPath(storedFileEntity.getId()));
-        storedFileEntityRepository.save(storedFileEntity);
+        localDiskFileEntityRepository.save(localDiskFileEntity);//Saving the entity to get the file ID by AutoIncrement
+        localDiskFileEntity.setPath(localDiskFileUtils.generateNewStoredFileEntityPath(localDiskFileEntity.getId()));
+        localDiskFileEntityRepository.save(localDiskFileEntity);
 
-        return storedFileEntity;
+        return localDiskFileEntity;
     }
 }

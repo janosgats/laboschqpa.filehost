@@ -3,13 +3,13 @@
  */
 
 plugins {
+    id 'idea'
     id 'java'
     id 'maven-publish'
     id 'org.springframework.boot' version '2.4.1'
     id "io.spring.dependency-management" version "1.0.11.RELEASE"
     id "io.freefair.lombok" version "5.3.0"
 }
-
 repositories {
     mavenLocal()
     maven {
@@ -17,7 +17,18 @@ repositories {
     }
 }
 
+
+idea {
+    module {
+        downloadJavadoc = true
+        downloadSources = true
+    }
+}
+
 dependencies {
+    implementation platform('software.amazon.awssdk:bom:2.15.69')
+    implementation 'software.amazon.awssdk:s3'
+
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'

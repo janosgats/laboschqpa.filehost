@@ -1,13 +1,13 @@
 package com.laboschqpa.filehost.model.file.factory;
 
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
-import com.laboschqpa.filehost.entity.StoredFileEntity;
+import com.laboschqpa.filehost.entity.LocalDiskFileEntity;
 import com.laboschqpa.filehost.exceptions.InvalidHttpRequestException;
 import com.laboschqpa.filehost.exceptions.apierrordescriptor.ContentNotFoundException;
 import com.laboschqpa.filehost.model.file.DownloadableFile;
-import com.laboschqpa.filehost.model.file.StoredFile;
+import com.laboschqpa.filehost.model.file.LocalDiskFile;
 import com.laboschqpa.filehost.repo.IndexedFileEntityRepository;
-import com.laboschqpa.filehost.util.StoredFileUtils;
+import com.laboschqpa.filehost.util.LocalDiskFileUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,10 +17,10 @@ import java.util.Optional;
 @Service
 public class DownloadableFileFactory {
     private final IndexedFileEntityRepository indexedFileEntityRepository;
-    private final StoredFileUtils storedFileUtils;
+    private final LocalDiskFileUtils localDiskFileUtils;
 
-    public StoredFile from(StoredFileEntity storedFileEntity) {
-        return new StoredFile(storedFileUtils, storedFileEntity, null, null);
+    public LocalDiskFile from(LocalDiskFileEntity localDiskFileEntity) {
+        return new LocalDiskFile(localDiskFileUtils, localDiskFileEntity, null, null);
     }
 
     public DownloadableFile from(Long indexedFileId) {
@@ -31,8 +31,8 @@ public class DownloadableFileFactory {
 
         IndexedFileEntity indexedFileEntity = indexedFileOptional.get();
 
-        if (indexedFileEntity instanceof StoredFileEntity)
-            return from((StoredFileEntity) indexedFileEntity);
+        if (indexedFileEntity instanceof LocalDiskFileEntity)
+            return from((LocalDiskFileEntity) indexedFileEntity);
 
         throw new InvalidHttpRequestException("Cannot create DownloadableFile from indexedFileId: " + indexedFileId);
     }
