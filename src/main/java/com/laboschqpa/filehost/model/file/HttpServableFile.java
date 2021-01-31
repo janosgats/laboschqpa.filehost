@@ -7,7 +7,7 @@ import javax.servlet.http.HttpServletRequest;
 
 public interface HttpServableFile extends IndexedFile {
     /**
-     * Gets the file's content.
+     * "Puts" the file into the HTTP response
      */
     ResponseEntity<Resource> getDownloadResponseEntity(HttpServletRequest request);
 }
