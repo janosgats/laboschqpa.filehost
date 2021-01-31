@@ -17,17 +17,18 @@ public interface QuotaRepository extends JpaRepository<Quota, Long> {
     IndexedFileStatusAttributeConverter indexedFileStatusAttributeConverter = new IndexedFileStatusAttributeConverter();
     QuotaSubjectCategoryAttributeConverter quotaSubjectCategoryAttributeConverter = new QuotaSubjectCategoryAttributeConverter();
 
+    //TODO: Refactor this. Maybe apply string enum vals, and so
     @Query(value = "select * " +
             "from (select owner_user_id as subjectId, :categoryEnumVal_USER as subjectCategoryVal, coalesce(sum(indexed_file.size), 0) as usedBytes " +
             "      from indexed_file " +
-            "      where status in (:statusEnumVal_ADDED_TO_DATABASE_INDEX, :statusEnumVal_UPLOADING, :statusEnumVal_UPLOADED, :statusEnumVal_AVAILABLE, :statusEnumVal_FAILED, :statusEnumVal_ABORTED_BY_FILE_HOST, :statusEnumVal_FAILED_DURING_DELETION) " +
+            "      where status in (:statusEnumVal_ADDED_TO_DATABASE_INDEX, :statusEnumVal_PRE_UPLOAD_PROCESSING, :statusEnumVal_UPLOADING, :statusEnumVal_UPLOADED, :statusEnumVal_AVAILABLE, :statusEnumVal_FAILED, :statusEnumVal_ABORTED_BY_FILE_HOST, :statusEnumVal_FAILED_DURING_DELETION) " +
             "        and owner_user_id = :ownerUserId " +
             "     ) as user " +
             "UNION ALL " +
             "select * " +
             "from (select owner_team_id as subjectId, :categoryEnumVal_TEAM as subjectCategoryVal, coalesce(sum(indexed_file.size), 0) as usedBytes " +
             "      from indexed_file " +
-            "      where status in (:statusEnumVal_ADDED_TO_DATABASE_INDEX, :statusEnumVal_UPLOADING, :statusEnumVal_UPLOADED, :statusEnumVal_AVAILABLE, :statusEnumVal_FAILED, :statusEnumVal_ABORTED_BY_FILE_HOST) " +
+            "      where status in (:statusEnumVal_ADDED_TO_DATABASE_INDEX, :statusEnumVal_PRE_UPLOAD_PROCESSING, :statusEnumVal_UPLOADING, :statusEnumVal_UPLOADED, :statusEnumVal_AVAILABLE, :statusEnumVal_FAILED, :statusEnumVal_ABORTED_BY_FILE_HOST, :statusEnumVal_FAILED_DURING_DELETION) " +
             "        and owner_team_id = :ownerTeamId " +
             "     ) as team;",
             nativeQuery = true)
@@ -36,6 +37,7 @@ public interface QuotaRepository extends JpaRepository<Quota, Long> {
             @Param("ownerTeamId") long ownerTeamId,
 
             @Param("statusEnumVal_ADDED_TO_DATABASE_INDEX") int statusEnumVal_ADDED_TO_DATABASE_INDEX,
+            @Param("statusEnumVal_PRE_UPLOAD_PROCESSING") int statusEnumVal_PRE_UPLOAD_PROCESSING,
             @Param("statusEnumVal_UPLOADING") int statusEnumVal_UPLOADING,
             @Param("statusEnumVal_UPLOADED") int statusEnumVal_UPLOADED,
             @Param("statusEnumVal_AVAILABLE") int statusEnumVal_AVAILABLE,
@@ -54,6 +56,7 @@ public interface QuotaRepository extends JpaRepository<Quota, Long> {
                 ownerTeamId,
 
                 indexedFileStatusAttributeConverter.convertToDatabaseColumn(IndexedFileStatus.ADDED_TO_DATABASE_INDEX),
+                indexedFileStatusAttributeConverter.convertToDatabaseColumn(IndexedFileStatus.PRE_UPLOAD_PROCESSING),
                 indexedFileStatusAttributeConverter.convertToDatabaseColumn(IndexedFileStatus.UPLOADING),
                 indexedFileStatusAttributeConverter.convertToDatabaseColumn(IndexedFileStatus.UPLOAD_STREAM_SAVED),
                 indexedFileStatusAttributeConverter.convertToDatabaseColumn(IndexedFileStatus.AVAILABLE),

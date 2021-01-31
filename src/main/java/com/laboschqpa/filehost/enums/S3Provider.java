@@ -7,17 +7,21 @@ import java.util.Arrays;
 import java.util.Optional;
 
 public enum S3Provider {
-    AMAZON(0, "Amazon"),
-    SCALE_WAY(1, "ScaleWay");
+    UNDECIDED(0, "Not decided on provider yet", null),
+    AMAZON(1, "Amazon", "amazonaws.com"),
+    SCALE_WAY(2, "ScaleWay", "scw.cloud");
 
     @Getter
     private Integer value;
     @Getter
     private String displayName;
+    @Getter
+    private String endpointDomain;
 
-    S3Provider(int value, String displayName) {
+    S3Provider(int value, String displayName, String endpointDomain) {
         this.value = value;
         this.displayName = displayName;
+        this.endpointDomain = endpointDomain;
     }
 
     @Override

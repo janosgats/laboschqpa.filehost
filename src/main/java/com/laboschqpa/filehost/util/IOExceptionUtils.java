@@ -22,7 +22,19 @@ public class IOExceptionUtils {
         }
     }
 
+    public static <T> T wrap(Supplier<T> supplier, String message) {
+        try {
+            return supplier.get();
+        } catch (IOException e) {
+            throw new RuntimeException(message, e);
+        }
+    }
+
     public interface Callable {
         void call() throws IOException;
+    }
+
+    public interface Supplier<T> {
+        T get() throws IOException;
     }
 }
