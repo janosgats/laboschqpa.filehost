@@ -40,7 +40,7 @@ public class UploadableFileFactory {
 
         if (useS3) {
             S3FileEntity s3FileEntity = createS3FileEntityForUploadedFile(fileUploadRequest, originalFileName);
-            return new S3File(s3FileEntity, s3FileSaver);
+            return new S3File(s3FileEntity, s3FileSaver, null);
         } else {
             LocalDiskFileEntity localDiskFileEntity = createLocalDiskFileEntityForUploadedFile(fileUploadRequest, originalFileName);
             return new LocalDiskFile(localDiskFileUtils, localDiskFileEntity, localDiskFileSaver, false);

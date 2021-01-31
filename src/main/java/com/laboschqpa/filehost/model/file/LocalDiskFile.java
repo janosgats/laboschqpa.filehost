@@ -1,7 +1,6 @@
 package com.laboschqpa.filehost.model.file;
 
 import com.laboschqpa.filehost.entity.LocalDiskFileEntity;
-import com.laboschqpa.filehost.enums.IndexedFileStatus;
 import com.laboschqpa.filehost.enums.apierrordescriptor.FileServingApiError;
 import com.laboschqpa.filehost.exceptions.apierrordescriptor.FileServingException;
 import com.laboschqpa.filehost.service.LocalDiskFileSaver;
@@ -11,7 +10,6 @@ import lombok.extern.log4j.Log4j2;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Objects;
@@ -29,7 +27,7 @@ public class LocalDiskFile extends AbstractIndexedFile<LocalDiskFileEntity> impl
     }
 
     public LocalDiskFile(LocalDiskFileUtils localDiskFileUtils, LocalDiskFileEntity localDiskFileEntity, LocalDiskFileSaver localDiskFileSaver, boolean assertFileCurrentlyExists) {
-        super(Objects.requireNonNull(localDiskFileEntity));
+        super(localDiskFileEntity);
         Objects.requireNonNull(localDiskFileUtils);
 
         this.localDiskFileUtils = localDiskFileUtils;
@@ -90,16 +88,8 @@ public class LocalDiskFile extends AbstractIndexedFile<LocalDiskFileEntity> impl
         if (!isFileCurrentlyExisting())
             throw new FileServingException(FileServingApiError.FILE_DOES_NOT_EXIST, "File does not exist currently!");
 
-        try {
-            indexedFileEntity.setStatus(IndexedFileStatus.DELETED);
-            localDiskFileUtils.saveLocalDiskFileEntity(indexedFileEntity);
-            java.nio.file.Files.delete(Path.of(file.getAbsolutePath()));
-        } catch (IOException e) {
-            log.error("Couldn't delete file {}!", indexedFileEntity.getId(), e);
-            indexedFileEntity.setStatus(IndexedFileStatus.FAILED_DURING_DELETION);
-            localDiskFileUtils.saveLocalDiskFileEntity(indexedFileEntity);
-            throw new FileServingException(FileServingApiError.CANNOT_DELETE_FILE, "Cannot delete file: " + file.getAbsolutePath(), e);
-        }
+        IOExceptionUtils.wrap(() -> java.nio.file.Files.delete(Path.of(file.getAbsolutePath())),
+                "Cannot delete file: " + file.getAbsolutePath());
     }
 
     private boolean isFileCurrentlyExisting() {

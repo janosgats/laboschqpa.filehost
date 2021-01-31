@@ -4,12 +4,13 @@ import com.laboschqpa.filehost.entity.IndexedFileEntity;
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
 
 import java.time.Instant;
+import java.util.Objects;
 
 public class AbstractIndexedFile<T extends IndexedFileEntity> implements IndexedFile {
     protected final T indexedFileEntity;
 
     public AbstractIndexedFile(T indexedFileEntity) {
-        this.indexedFileEntity = indexedFileEntity;
+        this.indexedFileEntity = Objects.requireNonNull(indexedFileEntity);
     }
 
     @Override
