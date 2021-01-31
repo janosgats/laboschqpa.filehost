@@ -40,10 +40,10 @@ public class UploadableFileFactory {
 
         if (useS3) {
             S3FileEntity s3FileEntity = createS3FileEntityForUploadedFile(fileUploadRequest, originalFileName);
-            return new S3File(s3FileEntity, s3FileSaver, null);
+            return new S3File(s3FileEntity, s3FileSaver, null, null, null);
         } else {
             LocalDiskFileEntity localDiskFileEntity = createLocalDiskFileEntityForUploadedFile(fileUploadRequest, originalFileName);
-            return new LocalDiskFile(localDiskFileUtils, localDiskFileEntity, localDiskFileSaver, false);
+            return new LocalDiskFile(localDiskFileUtils, localDiskFileEntity, localDiskFileSaver, null, false);
         }
     }
 
@@ -83,6 +83,10 @@ public class UploadableFileFactory {
         s3FileEntity.setS3Provider(s3ObjectSpecifier.getProvider());
         s3FileEntity.setBucket(s3ObjectSpecifier.getBucket());
         s3FileEntity.setObjectKey(s3ObjectSpecifier.getKey());
+
+        if (s3FileEntity.getS3Provider() != S3Provider.SCALE_WAY) {
+            throw new UnsupportedOperationException("S3 provider not supported yet: " + s3FileEntity.getS3Provider());
+        }
 
         s3FileEntityRepository.save(s3FileEntity);
         logger.trace("Created S3FileEntity for file upload: {}", s3FileEntity);

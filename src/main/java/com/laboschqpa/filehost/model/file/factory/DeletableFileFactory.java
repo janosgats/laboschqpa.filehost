@@ -3,6 +3,7 @@ package com.laboschqpa.filehost.model.file.factory;
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
 import com.laboschqpa.filehost.entity.LocalDiskFileEntity;
 import com.laboschqpa.filehost.entity.S3FileEntity;
+import com.laboschqpa.filehost.enums.S3Provider;
 import com.laboschqpa.filehost.exceptions.InvalidHttpRequestException;
 import com.laboschqpa.filehost.exceptions.apierrordescriptor.ContentNotFoundException;
 import com.laboschqpa.filehost.model.file.DeletableFile;
@@ -24,11 +25,14 @@ public class DeletableFileFactory {
     private final S3Client s3Client;
 
     public LocalDiskFile from(LocalDiskFileEntity localDiskFileEntity) {
-        return new LocalDiskFile(localDiskFileUtils, localDiskFileEntity, null, false);
+        return new LocalDiskFile(localDiskFileUtils, localDiskFileEntity, null, null, false);
     }
 
     public S3File from(S3FileEntity s3FileEntity) {
-        return new S3File(s3FileEntity, null, s3Client);
+        if (s3FileEntity.getS3Provider() != S3Provider.SCALE_WAY) {
+            throw new UnsupportedOperationException("S3 provider not supported yet: " + s3FileEntity.getS3Provider());
+        }
+        return new S3File(s3FileEntity, null, s3Client, null, null);
     }
 
     public DeletableFile fromIndexedFileId(Long indexedFileId) {

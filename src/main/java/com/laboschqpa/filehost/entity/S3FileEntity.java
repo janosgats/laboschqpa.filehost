@@ -31,7 +31,7 @@ public class S3FileEntity extends IndexedFileEntity {
     @Column(name = "object_key", nullable = false)
     private String objectKey;
 
-    @Column(name = "cached_presigned_url")
+    @Column(name = "cached_presigned_url", columnDefinition = "text")
     private String cachedPresignedUrl;
 
     @Column(name = "presigned_url_expiration")
