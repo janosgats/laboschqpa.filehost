@@ -1,7 +1,6 @@
 package com.laboschqpa.filehost.model.file;
 
 import com.laboschqpa.filehost.entity.S3FileEntity;
-import com.laboschqpa.filehost.exceptions.NotImplementedException;
 import com.laboschqpa.filehost.service.S3FileSaver;
 import lombok.extern.log4j.Log4j2;
 
@@ -25,9 +24,5 @@ public class S3File extends AbstractIndexedFile<S3FileEntity> implements Uploada
 
     @Override
     public void cleanUpFailedUpload() {
-        if (true)
-            throw new NotImplementedException("cleanUpFailedUpload");
-
-        log.trace("File {} cleaned up after failed upload.", indexedFileEntity.getId());
     }
 }

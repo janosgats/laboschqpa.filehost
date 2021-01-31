@@ -10,6 +10,8 @@ public class RingBufferOverDuplexByteStoreInputStream extends InputStream {
     private static final int EOF = -1;
     private static byte[] readBuffer;
 
+    private boolean closed = false;
+
     final DuplexByteStore byteStore;
     private final int ringSizePlusOne; // Using a ByteStore 1 byte longer than the ring size to differentiate between an empty and a full ring.
 
@@ -34,6 +36,8 @@ public class RingBufferOverDuplexByteStoreInputStream extends InputStream {
 
     @Override
     public int read() throws IOException {
+        assertNotClosed();
+
         if (!isThereAByteToRead()) {
             if (!isThereSpaceToWrite()) {
                 throw new IllegalStateException("Cannot read and cannot write the ring!");
@@ -51,6 +55,7 @@ public class RingBufferOverDuplexByteStoreInputStream extends InputStream {
 
     @Override
     public int read(byte[] bufferToFill, int off, int len) throws IOException {
+        assertNotClosed();
         Objects.checkFromIndexSize(off, len, bufferToFill.length);
 
         boolean wasEofReached = false;
@@ -75,6 +80,8 @@ public class RingBufferOverDuplexByteStoreInputStream extends InputStream {
      * @return {@code True} if {@code EOF} is reached, {@code false} if the ring is full.
      */
     public boolean readUntilRingIsFullOrEndOfStreamReached() throws IOException {
+        assertNotClosed();
+
         while (isThereSpaceToWrite()) {
             final boolean wasEofReached = copyChunkFromInputStreamIntoRing();
             if (wasEofReached) {
@@ -129,6 +136,9 @@ public class RingBufferOverDuplexByteStoreInputStream extends InputStream {
 
     @Override
     public void close() throws IOException {
+        closed = true;
+
+        readBuffer = null;
         byteStore.close();
         inputStream.close();
     }
@@ -176,5 +186,11 @@ public class RingBufferOverDuplexByteStoreInputStream extends InputStream {
             return 0;
         else
             return nextWritePosition + 1;
+    }
+
+    final void assertNotClosed() {
+        if (closed) {
+            throw new IllegalStateException(this.getClass().getSimpleName() + " is closed!");
+        }
     }
 }
