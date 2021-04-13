@@ -6,6 +6,7 @@ import com.laboschqpa.filehost.api.service.FileUploaderService;
 import com.laboschqpa.filehost.config.AppConstants;
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
 import com.laboschqpa.filehost.enums.FileAccessType;
+import com.laboschqpa.filehost.enums.UploadedFileType;
 import com.laboschqpa.filehost.model.upload.FileUploadRequest;
 import com.laboschqpa.filehost.service.fileservingauth.AuthorizeRequestResult;
 import com.laboschqpa.filehost.service.fileservingauth.FileServingUserAuthorizerService;
@@ -34,15 +35,26 @@ public class FileServingController {
         return fileDownloaderService.downloadFile(fileId, httpServletRequest);
     }
 
-    @PostMapping("/**")
-    public FileUploadResponseDto postUpload(HttpServletRequest httpServletRequest) {
+    @PostMapping("/any/**")
+    public FileUploadResponseDto postUploadAny(HttpServletRequest httpServletRequest) {
+        IndexedFileEntity createdFile = upload(httpServletRequest, UploadedFileType.ANY);
+        return new FileUploadResponseDto(createdFile.getId());
+    }
+
+    @PostMapping("/image/**")
+    public FileUploadResponseDto postUploadImage(HttpServletRequest httpServletRequest) {
+        IndexedFileEntity createdFile = upload(httpServletRequest, UploadedFileType.IMAGE);
+        return new FileUploadResponseDto(createdFile.getId());
+    }
+
+    private IndexedFileEntity upload(HttpServletRequest httpServletRequest, UploadedFileType forcedFileType) {
         final AuthorizeRequestResult authorizeRequestReturn
                 = fileServingUserAuthorizerService.authorizeRequestOrThrow(null, FileAccessType.CREATE_NEW, httpServletRequest);
 
         final FileUploadRequest fileUploadRequest
-                = new FileUploadRequest(authorizeRequestReturn.getLoggedInUserId(), authorizeRequestReturn.getLoggedInUserTeamId());
+                = new FileUploadRequest(authorizeRequestReturn.getLoggedInUserId(),
+                authorizeRequestReturn.getLoggedInUserTeamId(), forcedFileType);
 
-        IndexedFileEntity createdFile = fileUploaderService.uploadFile(fileUploadRequest, httpServletRequest);
-        return new FileUploadResponseDto(createdFile.getId());
+        return fileUploaderService.uploadFile(fileUploadRequest, httpServletRequest);
     }
 }

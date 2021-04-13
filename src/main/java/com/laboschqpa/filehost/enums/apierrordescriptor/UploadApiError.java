@@ -8,7 +8,8 @@ public enum UploadApiError implements ApiErrorDescriptor {
     ERROR_DURING_QUOTA_ALLOCATION(1),
     STREAM_LENGTH_LIMIT_EXCEEDED(2),
     ERROR_DURING_SAVING_FILE(3),
-    IO_EXCEPTION_WHILE_SAVING_STREAM(4);
+    IO_EXCEPTION_WHILE_SAVING_STREAM(4),
+    MIME_TYPE_IS_NOT_IMAGE(5);
 
     private Integer apiErrorCode;
 

@@ -20,6 +20,7 @@ import com.laboschqpa.filehost.model.upload.FileUploadRequest;
 import com.laboschqpa.filehost.repo.IndexedFileEntityRepository;
 import com.laboschqpa.filehost.util.FileUploadUtils;
 import com.laboschqpa.filehost.util.IOExceptionUtils;
+import com.laboschqpa.filehost.util.fileuploadconfigurer.FileUploadConfigurerFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.tika.detect.Detector;
@@ -30,7 +31,6 @@ import org.apache.tomcat.util.http.fileupload.FileItemIterator;
 import org.apache.tomcat.util.http.fileupload.FileItemStream;
 import org.apache.tomcat.util.http.fileupload.MultipartStream;
 import org.apache.tomcat.util.http.fileupload.servlet.ServletFileUpload;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -48,9 +48,7 @@ public class FileUploaderService {
 
     private final ServletFileUpload servletFileUpload = new ServletFileUpload();
 
-    @Value("${filehost.upload.filemaxsize}")
-    private Long uploadFileMaxSize;
-
+    private final FileUploadConfigurerFactory fileUploadConfigurerFactory;
     private final UploadableFileFactory uploadableFileFactory;
     private final IndexedFileEntityRepository indexedFileEntityRepository;
     private final TrackingInputStreamFactory trackingInputStreamFactory;
@@ -84,7 +82,7 @@ public class FileUploaderService {
             final String normalizedFileName = FileUploadUtils.createNormalizedFileName(uploadedFile);
 
             uploadedFileTrackingInputStream = trackingInputStreamFactory.createForFileUpload(uploadedFile.openStream());
-            uploadedFileTrackingInputStream.setLimit(uploadFileMaxSize);
+            fileUploadConfigurerFactory.get(fileUploadRequest.getForcedFileType()).applyMaxFileSize(uploadedFileTrackingInputStream);
             log.debug("Multipart file field {} with fileName {} detected.", fieldName, normalizedFileName);
 
             IndexedFileEntity newlySavedFile = saveNewFile(fileUploadRequest, uploadedFileTrackingInputStream,
@@ -96,6 +94,13 @@ public class FileUploaderService {
             throw e;
         } catch (Exception e) {
             handleStreamClose(uploadedFileTrackingInputStream, true);
+
+            if (e instanceof StreamLengthLimitExceededException) {
+                throw (StreamLengthLimitExceededException) e;
+            }
+            if (e instanceof UploadException) {
+                throw (UploadException) e;
+            }
             throw new UploadException(UploadApiError.ERROR_DURING_SAVING_FILE, "Exception occurred while saving file.", e);
         }
     }
@@ -127,7 +132,7 @@ public class FileUploaderService {
             final QuotaAllocatingInputStream quotaAllocatingInputStream
                     = quotaAllocatingInputStreamFactory.from(fileUploadingInputStream, newUploadableFile.getEntity(), approximateFileSize);
 
-            detectMimeTypeAndPersist(quotaAllocatingInputStream, newUploadableFile);
+            detectMimeTypeAndPersist(fileUploadRequest, quotaAllocatingInputStream, newUploadableFile);
 
             log.debug("New file uploaded and saved: {}", newUploadableFile.getEntity().toString());
             return newUploadableFile.getEntity();
@@ -146,11 +151,14 @@ public class FileUploaderService {
                 markFileAs(IndexedFileStatus.FAILED, newUploadableFile);
                 cleanUpFile(IndexedFileStatus.CLEANED_UP_AFTER_FAILED, newUploadableFile);
             }
+            if (e instanceof UploadException) {
+                throw e;
+            }
             throw new UploadException(UploadApiError.ERROR_DURING_SAVING_FILE, "Exception while handling saving of the uploaded file!", e);
         }
     }
 
-    void detectMimeTypeAndPersist(CountingInputStreamInterface fileUploadingStream, UploadableFile uploadableFile) {
+    void detectMimeTypeAndPersist(FileUploadRequest fileUploadRequest, CountingInputStreamInterface fileUploadingStream, UploadableFile uploadableFile) {
         final IndexedFileEntity fileEntity = uploadableFile.getEntity();
 
         fileEntity.setStatus(IndexedFileStatus.PRE_UPLOAD_PROCESSING);
@@ -163,6 +171,7 @@ public class FileUploaderService {
             log.trace("Bytes read before MIME type detection: {}", fileUploadingStream.getCountOfReadBytes());
             detectMimeTypeByTika(new NonCloseableInputStream(rereadableInputStream), fileEntity);
             log.trace("Bytes read after MIME type detection: {}", fileUploadingStream.getCountOfReadBytes());
+            fileUploadConfigurerFactory.get(fileUploadRequest.getForcedFileType()).assertMimeType(uploadableFile);
 
             IOExceptionUtils.wrap(rereadableInputStream::rewind, "Cannot rewind rereadableInputStream after Tika MIME type detection.");
 

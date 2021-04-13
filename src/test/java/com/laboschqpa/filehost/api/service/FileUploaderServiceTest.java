@@ -3,7 +3,10 @@ package com.laboschqpa.filehost.api.service;
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
 import com.laboschqpa.filehost.model.file.UploadableFile;
 import com.laboschqpa.filehost.model.inputstream.CountingInputStream;
+import com.laboschqpa.filehost.model.upload.FileUploadRequest;
 import com.laboschqpa.filehost.repo.IndexedFileEntityRepository;
+import com.laboschqpa.filehost.util.fileuploadconfigurer.AnyFileUploadConfigurer;
+import com.laboschqpa.filehost.util.fileuploadconfigurer.FileUploadConfigurerFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.cxf.helpers.LoadingByteArrayOutputStream;
 import org.apache.tika.config.TikaConfig;
@@ -28,11 +31,21 @@ class FileUploaderServiceTest {
     static Detector tikaDetector = TikaConfig.getDefaultConfig().getDetector();
     @Mock
     IndexedFileEntityRepository indexedFileEntityRepository;
+    @Mock
+    AnyFileUploadConfigurer anyFileUploadConfigurer;
+    @Mock
+    FileUploadConfigurerFactory fileUploadConfigurerFactory;
+
     FileUploaderService fileUploaderService;
 
     @BeforeEach
     void beforeEach() {
-        fileUploaderService = new FileUploaderService(null,
+        when(fileUploadConfigurerFactory.get(any()))
+                .thenReturn(anyFileUploadConfigurer);
+
+        fileUploaderService = new FileUploaderService(
+                fileUploadConfigurerFactory,
+                null,
                 indexedFileEntityRepository,
                 null,
                 null,
@@ -75,7 +88,7 @@ class FileUploaderServiceTest {
             return null;
         }).when(uploadableFile).saveFromStream(any());
 
-        fileUploaderService.detectMimeTypeAndPersist(countingInputStream, uploadableFile);
+        fileUploaderService.detectMimeTypeAndPersist(new FileUploadRequest(), countingInputStream, uploadableFile);
 
         byte[] actualCopiedOutputStreamArray = testReadOutputStream.toByteArray();
         assertEquals(streamLength, actualCopiedOutputStreamArray.length);
