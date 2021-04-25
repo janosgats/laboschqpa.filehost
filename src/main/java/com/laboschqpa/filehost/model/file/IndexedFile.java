@@ -31,11 +31,11 @@ public interface IndexedFile {
     Long getSize();
 
     /**
-     * Gets the original file name.
+     * Gets file name.
      *
      * @return {@code Null}, if original file name is unavailable.
      */
-    String getOriginalFileName();
+    String getFileName();
 
     /**
      * Gets the file's MIME type if possible.

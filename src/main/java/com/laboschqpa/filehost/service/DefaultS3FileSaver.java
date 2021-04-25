@@ -169,7 +169,7 @@ public class DefaultS3FileSaver implements S3FileSaver {
 
     static String getContentDispositionHeader(S3FileEntity s3FileEntity) {
         if (MimeTypes.OCTET_STREAM.equals(s3FileEntity.getMimeType())) {
-            return "attachment; filename=\"" + s3FileEntity.getOriginalFileName() + "\"";
+            return "attachment; filename=\"" + s3FileEntity.getName() + "\"";
         }
         return null;
     }

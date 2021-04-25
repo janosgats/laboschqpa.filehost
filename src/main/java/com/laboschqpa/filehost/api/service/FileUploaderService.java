@@ -212,7 +212,7 @@ public class FileUploaderService {
     private void detectMimeTypeByTika(InputStream inputStream, IndexedFileEntity indexedFileEntity) {
         try (TikaInputStream tikaInputStream = TikaInputStream.get(inputStream)) {
             Metadata metadata = new Metadata();
-            metadata.add(Metadata.RESOURCE_NAME_KEY, indexedFileEntity.getOriginalFileName());
+            metadata.add(Metadata.RESOURCE_NAME_KEY, indexedFileEntity.getName());
             MediaType detectedMediaType = tikaDetector.detect(tikaInputStream, metadata);
 
             log.trace("Detected MIME type: {}", detectedMediaType.toString());

@@ -19,8 +19,8 @@ public class AbstractIndexedFile<T extends IndexedFileEntity> implements Indexed
     }
 
     @Override
-    public String getOriginalFileName() {
-        return indexedFileEntity.getOriginalFileName();
+    public String getFileName() {
+        return indexedFileEntity.getName();
     }
 
     @Override

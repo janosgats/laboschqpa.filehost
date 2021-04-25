@@ -39,7 +39,7 @@ public class ExtendedIndexedFileEntityRepositoryImpl implements ExtendedIndexedF
                         "    owner_team_id as ownerTeamId, " +
                         "    creation_time as creationTime, " +
                         "    mime_type as mimeType, " +
-                        "    original_file_name as originalFileName " +
+                        "    name as name " +
                         "from indexed_file " +
                         "where id in (" + joinedIds + ")");
 
@@ -55,7 +55,7 @@ public class ExtendedIndexedFileEntityRepositoryImpl implements ExtendedIndexedF
                     dto.setOwnerTeamId(((BigInteger) row[4]).longValue());
                     dto.setCreationTime(((Timestamp) row[5]).toInstant());
                     dto.setMimeType((String) row[6]);
-                    dto.setOriginalFileName((String) row[7]);
+                    dto.setName((String) row[7]);
 
                     return dto;
                 }

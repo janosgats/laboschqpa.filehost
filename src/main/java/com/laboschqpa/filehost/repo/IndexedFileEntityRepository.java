@@ -17,7 +17,7 @@ public interface IndexedFileEntityRepository extends JpaRepository<IndexedFileEn
 
     @Query(value = "select id as id, dtype as dType, status as statusVal, owner_user_id as ownerUserId, " +
             " owner_team_id as ownerTeamId, creation_time as creationTime, mime_type as mimeType, " +
-            " original_file_name as originalFileName" +
+            " name as name" +
             " from indexed_file " +
             " where id = :id",
             nativeQuery = true)

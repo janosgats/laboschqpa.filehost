@@ -35,22 +35,22 @@ public class UploadableFileFactory {
     private final LocalDiskFileSaver localDiskFileSaver;
     private final S3FileSaver s3FileSaver;
 
-    public UploadableFile fromFileUploadRequest(FileUploadRequest fileUploadRequest, String originalFileName) {
+    public UploadableFile fromFileUploadRequest(FileUploadRequest fileUploadRequest, String fileName) {
         final boolean useS3 = true; //TODO: Put some more sophisticated logic to decide on where to upload
 
         if (useS3) {
-            S3FileEntity s3FileEntity = createS3FileEntityForUploadedFile(fileUploadRequest, originalFileName);
+            S3FileEntity s3FileEntity = createS3FileEntityForUploadedFile(fileUploadRequest, fileName);
             return new S3File(s3FileEntity, s3FileSaver, null, null, null);
         } else {
-            LocalDiskFileEntity localDiskFileEntity = createLocalDiskFileEntityForUploadedFile(fileUploadRequest, originalFileName);
+            LocalDiskFileEntity localDiskFileEntity = createLocalDiskFileEntityForUploadedFile(fileUploadRequest, fileName);
             return new LocalDiskFile(localDiskFileUtils, localDiskFileEntity, localDiskFileSaver, null, false);
         }
     }
 
-    private LocalDiskFileEntity createLocalDiskFileEntityForUploadedFile(FileUploadRequest fileUploadRequest, String originalFileName) {
+    private LocalDiskFileEntity createLocalDiskFileEntityForUploadedFile(FileUploadRequest fileUploadRequest, String fileName) {
         LocalDiskFileEntity localDiskFileEntity = LocalDiskFileEntity.builder()
                 .status(IndexedFileStatus.ADDED_TO_DATABASE_INDEX)
-                .originalFileName(originalFileName)
+                .name(fileName)
                 .ownerUserId(fileUploadRequest.getLoggedInUserId())
                 .ownerTeamId(fileUploadRequest.getLoggedInUserTeamId())
                 .creationTime(Instant.now())
@@ -64,10 +64,10 @@ public class UploadableFileFactory {
         return localDiskFileEntity;
     }
 
-    private S3FileEntity createS3FileEntityForUploadedFile(FileUploadRequest fileUploadRequest, String originalFileName) {
+    private S3FileEntity createS3FileEntityForUploadedFile(FileUploadRequest fileUploadRequest, String fileName) {
         S3FileEntity s3FileEntity = S3FileEntity.builder()
                 .status(IndexedFileStatus.ADDED_TO_DATABASE_INDEX)
-                .originalFileName(originalFileName)
+                .name(fileName)
                 .ownerUserId(fileUploadRequest.getLoggedInUserId())
                 .ownerTeamId(fileUploadRequest.getLoggedInUserTeamId())
                 .creationTime(Instant.now())

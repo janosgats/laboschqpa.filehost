@@ -111,7 +111,7 @@ public class LocalDiskFile extends AbstractIndexedFile<LocalDiskFileEntity> impl
             httpHeaders.setContentType(MediaType.parseMediaType(getMimeType()));
         } else {
             httpHeaders.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-            httpHeaders.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + getOriginalFileName() + "\"");
+            httpHeaders.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + getFileName() + "\"");
         }
 
         httpHeaders.setETag(getETag());

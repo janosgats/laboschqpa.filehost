@@ -64,6 +64,6 @@ public class IndexedFileEntity {
     @JoinColumn(name = "size")
     private Long size;//Size in Bytes
 
-    @Column(name = "original_file_name")
-    private String originalFileName;
+    @Column(name = "name")
+    private String name;
 }
