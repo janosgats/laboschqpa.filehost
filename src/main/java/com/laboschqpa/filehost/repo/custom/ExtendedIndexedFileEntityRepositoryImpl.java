@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
-
 import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.Collection;
@@ -39,7 +38,8 @@ public class ExtendedIndexedFileEntityRepositoryImpl implements ExtendedIndexedF
                         "    owner_user_id as ownerUserId, " +
                         "    owner_team_id as ownerTeamId, " +
                         "    creation_time as creationTime, " +
-                        "    mime_type as mimeType " +
+                        "    mime_type as mimeType, " +
+                        "    original_file_name as originalFileName " +
                         "from indexed_file " +
                         "where id in (" + joinedIds + ")");
 
@@ -55,6 +55,7 @@ public class ExtendedIndexedFileEntityRepositoryImpl implements ExtendedIndexedF
                     dto.setOwnerTeamId(((BigInteger) row[4]).longValue());
                     dto.setCreationTime(((Timestamp) row[5]).toInstant());
                     dto.setMimeType((String) row[6]);
+                    dto.setOriginalFileName((String) row[7]);
 
                     return dto;
                 }

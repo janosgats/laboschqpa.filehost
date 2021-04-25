@@ -31,6 +31,7 @@ import org.apache.tomcat.util.http.fileupload.FileItemIterator;
 import org.apache.tomcat.util.http.fileupload.FileItemStream;
 import org.apache.tomcat.util.http.fileupload.MultipartStream;
 import org.apache.tomcat.util.http.fileupload.servlet.ServletFileUpload;
+import org.apache.tomcat.util.http.fileupload.util.Streams;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -45,6 +46,7 @@ import java.io.SequenceInputStream;
 public class FileUploaderService {
     private static final int MB = 1000 * 1000;
     private static final int TIKA_REREADABLE_STREAM_MAX_BYTES_IN_MEMORY = 1 * MB;
+    private static final String FORM_FIELD_NAME_APPROXIMATE_FILE_SIZE = "approximateFileSize";
 
     private final ServletFileUpload servletFileUpload = new ServletFileUpload();
 
@@ -73,7 +75,18 @@ public class FileUploaderService {
                 throw new InvalidUploadRequestException("No fields present in the multipart request!");
             }
 
-            FileItemStream uploadedFile = iterator.next();
+            Long approximateFileSize = null;
+
+            FileItemStream uploadedFile;
+
+            FileItemStream firstItem = iterator.next();
+            if (firstItem.isFormField() && FORM_FIELD_NAME_APPROXIMATE_FILE_SIZE.equals(firstItem.getFieldName())) {
+                approximateFileSize = Long.parseLong(Streams.asString(firstItem.openStream()));
+                uploadedFile = iterator.next();
+            } else {
+                uploadedFile = firstItem;
+            }
+
             String fieldName = uploadedFile.getFieldName();
             if (uploadedFile.isFormField()) {
                 throw new InvalidUploadRequestException("Unexpected multipart form field is present in HTTP body: " + fieldName);
@@ -86,7 +99,7 @@ public class FileUploaderService {
             log.debug("Multipart file field {} with fileName {} detected.", fieldName, normalizedFileName);
 
             IndexedFileEntity newlySavedFile = saveNewFile(fileUploadRequest, uploadedFileTrackingInputStream,
-                    normalizedFileName, null);//TODO: Get the initial file size approximation from a form field
+                    normalizedFileName, approximateFileSize);
             handleStreamClose(uploadedFileTrackingInputStream, false);
             return newlySavedFile;
         } catch (InvalidUploadRequestException | QuotaExceededException e) {

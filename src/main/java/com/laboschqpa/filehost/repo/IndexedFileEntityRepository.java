@@ -15,7 +15,9 @@ import java.util.Optional;
 
 public interface IndexedFileEntityRepository extends JpaRepository<IndexedFileEntity, Long>, ExtendedIndexedFileEntityRepository {
 
-    @Query(value = "select id as id, dtype as dType, status as statusVal, owner_user_id as ownerUserId, owner_team_id as ownerTeamId, creation_time as creationTime, mime_type as mimeType " +
+    @Query(value = "select id as id, dtype as dType, status as statusVal, owner_user_id as ownerUserId, " +
+            " owner_team_id as ownerTeamId, creation_time as creationTime, mime_type as mimeType, " +
+            " original_file_name as originalFileName" +
             " from indexed_file " +
             " where id = :id",
             nativeQuery = true)

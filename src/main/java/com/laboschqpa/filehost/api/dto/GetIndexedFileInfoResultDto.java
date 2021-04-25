@@ -21,6 +21,7 @@ public class GetIndexedFileInfoResultDto {
     private Long ownerTeamId;
     private Instant creationTime;
     private String mimeType;
+    private String originalFileName;
 
     public GetIndexedFileInfoResultDto(Long indexedFileId, boolean isExisting) {
         this.indexedFileId = indexedFileId;
@@ -35,5 +36,6 @@ public class GetIndexedFileInfoResultDto {
         this.ownerTeamId = indexedFileOnlyJpaDto.getOwnerTeamId();
         this.creationTime = indexedFileOnlyJpaDto.getCreationTime();
         this.mimeType = indexedFileOnlyJpaDto.getMimeType();
+        this.originalFileName = indexedFileOnlyJpaDto.getOriginalFileName();
     }
 }

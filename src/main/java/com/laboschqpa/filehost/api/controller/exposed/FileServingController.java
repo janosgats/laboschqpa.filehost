@@ -38,13 +38,13 @@ public class FileServingController {
     @PostMapping("/any/**")
     public FileUploadResponseDto postUploadAny(HttpServletRequest httpServletRequest) {
         IndexedFileEntity createdFile = upload(httpServletRequest, UploadedFileType.ANY);
-        return new FileUploadResponseDto(createdFile.getId());
+        return new FileUploadResponseDto(createdFile.getId(), createdFile.getMimeType());
     }
 
     @PostMapping("/image/**")
     public FileUploadResponseDto postUploadImage(HttpServletRequest httpServletRequest) {
         IndexedFileEntity createdFile = upload(httpServletRequest, UploadedFileType.IMAGE);
-        return new FileUploadResponseDto(createdFile.getId());
+        return new FileUploadResponseDto(createdFile.getId(), createdFile.getMimeType());
     }
 
     private IndexedFileEntity upload(HttpServletRequest httpServletRequest, UploadedFileType forcedFileType) {

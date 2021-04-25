@@ -15,4 +15,5 @@ public class IndexedFileOnlyJpaDtoImpl implements IndexedFileOnlyJpaDto {
     private Long ownerTeamId;
     private Instant creationTime;
     private String mimeType;
+    private String originalFileName;
 }

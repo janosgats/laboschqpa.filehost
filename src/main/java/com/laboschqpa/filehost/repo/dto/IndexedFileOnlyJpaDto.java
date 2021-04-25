@@ -25,4 +25,6 @@ public interface IndexedFileOnlyJpaDto {
     Instant getCreationTime();
 
     String getMimeType();
+
+    String getOriginalFileName();
 }
