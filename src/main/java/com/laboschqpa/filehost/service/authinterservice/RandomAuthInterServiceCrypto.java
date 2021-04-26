@@ -2,6 +2,7 @@ package com.laboschqpa.filehost.service.authinterservice;
 
 import com.google.common.primitives.Longs;
 import com.laboschqpa.filehost.exceptions.AuthInterServiceException;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Base64;
 
+@Log4j2
 @Service
 public class RandomAuthInterServiceCrypto implements AuthInterServiceCrypto {
     private static final String HEADER_SEPARATOR = "_";
@@ -28,7 +30,7 @@ public class RandomAuthInterServiceCrypto implements AuthInterServiceCrypto {
 
     private final String authInterServiceManualKey;
     private final boolean enableManualKey;
-    private final Mac macGenerator;
+    private final SecretKeySpec secretKeySpec;
 
     public RandomAuthInterServiceCrypto(@Value("${auth.interservice.key}") String authInterServiceKey,
                                         @Value("${auth.interservice.manualKey:null}") String authInterServiceManualKey,
@@ -40,14 +42,8 @@ public class RandomAuthInterServiceCrypto implements AuthInterServiceCrypto {
         this.authInterServiceManualKey = authInterServiceManualKey;
         this.enableManualKey = enableManualKey;
 
-        final SecretKeySpec secretKeySpec
-                = new SecretKeySpec(authInterServiceKey.getBytes(StandardCharsets.UTF_8), SIGNATURE_METHOD);
-        try {
-            macGenerator = Mac.getInstance(SIGNATURE_METHOD);
-            macGenerator.init(secretKeySpec);
-        } catch (InvalidKeyException | NoSuchAlgorithmException e) {
-            throw new AuthInterServiceException("Cannot init HMAC generator", e);
-        }
+        this.secretKeySpec = new SecretKeySpec(authInterServiceKey.getBytes(StandardCharsets.UTF_8), SIGNATURE_METHOD);
+        getNewMac();//To get an exception in the constructor if MACs cannot be created with the current config & environment
     }
 
     /**
@@ -76,6 +72,8 @@ public class RandomAuthInterServiceCrypto implements AuthInterServiceCrypto {
         final Instant now = getInstantNow();
         if (receivedInstant.isBefore(now.minusSeconds(ALLOWED_TIME_DIFFERENCE_SECONDS))
                 || receivedInstant.isAfter(now.plusSeconds(ALLOWED_TIME_DIFFERENCE_SECONDS))) {
+            log.warn("AuthInterService header is invalid because of time difference. receives: {}, now: {}",
+                    receivedInstant, now);
             return false;
         }
 
@@ -126,7 +124,17 @@ public class RandomAuthInterServiceCrypto implements AuthInterServiceCrypto {
     }
 
     byte[] calculateHmac(byte[] message) {
-        return macGenerator.doFinal(message);
+        return getNewMac().doFinal(message);
+    }
+
+    Mac getNewMac() {
+        try {
+            final Mac mac = Mac.getInstance(SIGNATURE_METHOD);
+            mac.init(secretKeySpec);
+            return mac;
+        } catch (InvalidKeyException | NoSuchAlgorithmException e) {
+            throw new AuthInterServiceException("Cannot init HMAC generator", e);
+        }
     }
 
     /**
