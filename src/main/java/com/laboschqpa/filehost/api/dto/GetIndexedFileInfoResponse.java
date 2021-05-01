@@ -12,7 +12,7 @@ import java.time.Instant;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class GetIndexedFileInfoResultDto {
+public class GetIndexedFileInfoResponse {
     @JsonProperty("isExisting")
     private boolean isExisting;
     private Long indexedFileId;
@@ -22,13 +22,14 @@ public class GetIndexedFileInfoResultDto {
     private Instant creationTime;
     private String mimeType;
     private String name;
+    private Long size;
 
-    public GetIndexedFileInfoResultDto(Long indexedFileId, boolean isExisting) {
+    public GetIndexedFileInfoResponse(Long indexedFileId, boolean isExisting) {
         this.indexedFileId = indexedFileId;
         this.isExisting = isExisting;
     }
 
-    public GetIndexedFileInfoResultDto(IndexedFileOnlyJpaDto indexedFileOnlyJpaDto) {
+    public GetIndexedFileInfoResponse(IndexedFileOnlyJpaDto indexedFileOnlyJpaDto) {
         this.isExisting = true;
         this.indexedFileId = indexedFileOnlyJpaDto.getId();
         this.indexedFileStatus = indexedFileOnlyJpaDto.getStatus();
@@ -37,5 +38,6 @@ public class GetIndexedFileInfoResultDto {
         this.creationTime = indexedFileOnlyJpaDto.getCreationTime();
         this.mimeType = indexedFileOnlyJpaDto.getMimeType();
         this.name = indexedFileOnlyJpaDto.getName();
+        this.size = indexedFileOnlyJpaDto.getSize();
     }
 }

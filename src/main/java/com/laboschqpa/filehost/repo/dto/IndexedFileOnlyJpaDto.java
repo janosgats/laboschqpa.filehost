@@ -27,4 +27,6 @@ public interface IndexedFileOnlyJpaDto {
     String getMimeType();
 
     String getName();
+
+    Long getSize();
 }

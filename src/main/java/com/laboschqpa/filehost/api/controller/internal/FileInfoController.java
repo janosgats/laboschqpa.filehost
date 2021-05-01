@@ -1,6 +1,6 @@
 package com.laboschqpa.filehost.api.controller.internal;
 
-import com.laboschqpa.filehost.api.dto.GetIndexedFileInfoResultDto;
+import com.laboschqpa.filehost.api.dto.GetIndexedFileInfoResponse;
 import com.laboschqpa.filehost.api.service.FileInfoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,7 +17,7 @@ public class FileInfoController {
     private final FileInfoService fileInfoService;
 
     @GetMapping("/indexedFileInfo")
-    public List<GetIndexedFileInfoResultDto> getIndexedFileInfo(@RequestBody List<Long> indexedFileIds) {
+    public List<GetIndexedFileInfoResponse> getIndexedFileInfo(@RequestBody List<Long> indexedFileIds) {
         return fileInfoService.getIndexedFileInfo(indexedFileIds);
     }
 }

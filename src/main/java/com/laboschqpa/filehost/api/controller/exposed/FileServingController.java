@@ -1,6 +1,6 @@
 package com.laboschqpa.filehost.api.controller.exposed;
 
-import com.laboschqpa.filehost.api.dto.FileUploadResponseDto;
+import com.laboschqpa.filehost.api.dto.FileUploadResponse;
 import com.laboschqpa.filehost.api.service.FileDownloaderService;
 import com.laboschqpa.filehost.api.service.FileUploaderService;
 import com.laboschqpa.filehost.config.AppConstants;
@@ -36,15 +36,15 @@ public class FileServingController {
     }
 
     @PostMapping("/any/**")
-    public FileUploadResponseDto postUploadAny(HttpServletRequest httpServletRequest) {
+    public FileUploadResponse postUploadAny(HttpServletRequest httpServletRequest) {
         IndexedFileEntity createdFile = upload(httpServletRequest, UploadedFileType.ANY);
-        return new FileUploadResponseDto(createdFile.getId(), createdFile.getMimeType());
+        return new FileUploadResponse(createdFile.getId(), createdFile.getMimeType());
     }
 
     @PostMapping("/image/**")
-    public FileUploadResponseDto postUploadImage(HttpServletRequest httpServletRequest) {
+    public FileUploadResponse postUploadImage(HttpServletRequest httpServletRequest) {
         IndexedFileEntity createdFile = upload(httpServletRequest, UploadedFileType.IMAGE);
-        return new FileUploadResponseDto(createdFile.getId(), createdFile.getMimeType());
+        return new FileUploadResponse(createdFile.getId(), createdFile.getMimeType());
     }
 
     private IndexedFileEntity upload(HttpServletRequest httpServletRequest, UploadedFileType forcedFileType) {

@@ -23,7 +23,8 @@ import java.time.Instant;
 
 @Log4j2
 public class S3File extends AbstractIndexedFile<S3FileEntity> implements UploadableFile, HttpServableFile, DeletableFile {
-    private static final long PRESIGNED_URL_EXPIRATION_DAYS = 6;
+    private static final long PRESIGNED_URL_EXPIRATION_SECONDS = 60;
+    private static final long PRESIGNED_URL_REFRESH_THRESHOLD_SECONDS = 10;
 
     private final S3FileEntityRepository s3FileEntityRepository;
     private final S3FileSaver s3FileSaver;
@@ -69,15 +70,14 @@ public class S3File extends AbstractIndexedFile<S3FileEntity> implements Uploada
     }
 
     String getFreshPresignedUrl() {
-        if (StringUtils.isBlank(indexedFileEntity.getCachedPresignedUrl())
-                || indexedFileEntity.getPresignedUrlExpiration().isBefore(Instant.now().plusSeconds(3600))) {
+        if (shouldPresignedUrlBeRefreshed()) {
             final GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                     .bucket(indexedFileEntity.getBucket())
                     .key(indexedFileEntity.getObjectKey())
                     .build();
 
             final GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
-                    .signatureDuration(Duration.ofDays(PRESIGNED_URL_EXPIRATION_DAYS))
+                    .signatureDuration(Duration.ofSeconds(PRESIGNED_URL_EXPIRATION_SECONDS))
                     .getObjectRequest(getObjectRequest)
                     .build();
 
@@ -90,4 +90,13 @@ public class S3File extends AbstractIndexedFile<S3FileEntity> implements Uploada
 
         return indexedFileEntity.getCachedPresignedUrl();
     }
+
+    boolean shouldPresignedUrlBeRefreshed() {
+        final Instant expirationLimit = Instant.now().plusSeconds(PRESIGNED_URL_REFRESH_THRESHOLD_SECONDS);
+
+        return StringUtils.isBlank(indexedFileEntity.getCachedPresignedUrl())
+                || indexedFileEntity.getPresignedUrlExpiration() == null
+                || indexedFileEntity.getPresignedUrlExpiration().isBefore(expirationLimit);
+    }
+
 }
