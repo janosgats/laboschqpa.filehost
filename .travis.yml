@@ -4,9 +4,6 @@ env:
   global:
 #    - SKIP_DOCKER_BUILD=true
 
-#    - FORCE_DEPLOY_TO_KSZK=true
-    - SKIP_DEPLOY_TO_KSZK=true
-
 #    - FORCE_DEPLOY_TO_GKE=true
 #    - SKIP_DEPLOY_TO_GKE=true
 
