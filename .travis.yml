@@ -3,8 +3,16 @@ language: minimal
 env:
   global:
 #    - SKIP_DOCKER_BUILD=true
+
 #    - FORCE_DEPLOY_TO_KSZK=true
     - SKIP_DEPLOY_TO_KSZK=true
+
+#    - FORCE_DEPLOY_TO_GKE=true
+#    - SKIP_DEPLOY_TO_GKE=true
+
+    - CLOUDSDK_CORE_DISABLE_PROMPTS=1
+    - GKE_SERVICE_ACCOUNT_BASE64=${GKE_SERVICE_ACCOUNT_BASE64}
+
     - PROJECT_IMAGE_NAME=laboschqpa-filehost
     - SHORT_COMMIT_HASH=${TRAVIS_COMMIT::10}
     - IMAGE_NAME_COMMIT=${DOCKER_USERNAME}/${PROJECT_IMAGE_NAME}:${SHORT_COMMIT_HASH}
@@ -31,6 +39,22 @@ jobs:
         - docker push ${IMAGE_NAME_LATEST}
         - docker push ${IMAGE_NAME_COMMIT}
         - docker push ${IMAGE_NAME_BRANCH}
+
+    - stage: DeployToGKE
+      if: env(SKIP_DEPLOY_TO_GKE) != "true" AND (branch = master OR env(FORCE_DEPLOY_TO_GKE) = "true")
+      script: skip
+      before_install:
+        - echo ${GKE_SERVICE_ACCOUNT_BASE64} | base64 --decode > gke-service-account.json
+        - curl https://sdk.cloud.google.com | bash > /dev/null
+        - source $HOME/google-cloud-sdk/path.bash.inc
+        - gcloud components update kubectl
+        - gcloud auth activate-service-account --key-file gke-service-account.json
+        - gcloud config set project ringed-bebop-312422
+        - gcloud config set compute/zone europe-central2-a
+        - gcloud container clusters get-credentials laboschqpa-1
+        - ls -lah
+      install:
+        - kubectl -n=qpa set image deployments/filehost filehost=${IMAGE_NAME_COMMIT}
 
     - stage: DeployToKSZK
       #      if: branch = master
