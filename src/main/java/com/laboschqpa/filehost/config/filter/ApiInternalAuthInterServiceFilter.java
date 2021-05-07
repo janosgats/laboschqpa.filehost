@@ -60,8 +60,7 @@ public class ApiInternalAuthInterServiceFilter implements Filter {
 
     private boolean decideIfRequestProcessingCanBeContinued(HttpServletRequest httpServletRequest, ServletResponse response, FilterChain chain) {
         final String requestUri = httpServletRequest.getRequestURI();
-        if (antPathMatcher.match(AppConstants.userAccessibleBaseUrlAntPattern, requestUri) ||
-                antPathMatcher.match(AppConstants.prometheusMetricsExposeUrl, requestUri)) {
+        if (shouldUrlBeSkipped(requestUri)) {
             log.trace("AuthInterService auth not required. URL: {}", httpServletRequest.getRequestURI());
             return true;
         }
@@ -74,6 +73,12 @@ public class ApiInternalAuthInterServiceFilter implements Filter {
 
         log.trace("AuthInterService auth failed. URL: {}", httpServletRequest.getRequestURI());
         throw new UnAuthorizedException("AuthInterService header is invalid.");
+    }
+
+    private boolean shouldUrlBeSkipped(String requestUri) {
+        return antPathMatcher.match(AppConstants.userAccessibleBaseUrlAntPattern, requestUri)
+                || antPathMatcher.match(AppConstants.prometheusMetricsExposeUrl, requestUri)
+                || antPathMatcher.match(AppConstants.healthPingUrlAntPattern, requestUri);
     }
 
     private void writeErrorResponseBody(HttpServletResponse httpServletResponse, String errorMessage, HttpStatus httpStatus) {
