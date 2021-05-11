@@ -1,6 +1,6 @@
 package com.laboschqpa.filehost.util;
 
-import com.laboschqpa.filehost.exceptions.InvalidHttpRequestException;
+import com.laboschqpa.filehost.exceptions.UnAuthorizedException;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -23,6 +23,6 @@ public class CookieHelper {
                 }
             }
         }
-        throw new InvalidHttpRequestException("Cannot found session cookie! You are probably not logged in.");
+        throw new UnAuthorizedException("Could not find session cookie! You are probably not logged in.");
     }
 }
