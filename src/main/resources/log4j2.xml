@@ -32,6 +32,9 @@
         <Logger name="org.springframework.security.web" level="info" additivity="false">
             <AppenderRef ref="AsyncLocaldevConsoleAppender"/>
         </Logger>
+        <Logger name="com.laboschqpa.filehost.config.filter.ApiInternalAuthInterServiceFilter" level="debug" additivity="false">
+            <AppenderRef ref="AsyncLocaldevConsoleAppender"/>
+        </Logger>
         <Logger name="com.laboschqpa.filehost" level="all" additivity="false">
             <AppenderRef ref="AsyncLocaldevConsoleAppender"/>
         </Logger>
