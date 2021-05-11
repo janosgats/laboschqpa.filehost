@@ -3,6 +3,7 @@ package com.laboschqpa.filehost.service;
 import com.laboschqpa.filehost.model.streamtracking.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +21,9 @@ public class GlobalStreamTrackerService implements Runnable {
 
     private StreamTracker allFileUploadsTracker;
     private StreamTracker allFileDownloadsTracker;
+
+    @Value("${streamTracking.logGlobalStreamSpeed:false}")
+    private Boolean logGlobalStreamSpeed;
 
     @PostConstruct
     private void setUp() {
@@ -48,7 +52,10 @@ public class GlobalStreamTrackerService implements Runnable {
         synchronized (streamTrackers) {
             for (StreamTracker streamTracker : streamTrackers) {
                 final TrackingIntervalState poppedIntervalState = streamTracker.popTrackingIntervalState();
-                log.trace("{}: {}", streamTracker.getName(), streamTracker.getTrackingIntervalStateFormatter().apply(poppedIntervalState));
+
+                if (logGlobalStreamSpeed) {
+                    log.trace("{}: {}", streamTracker.getName(), streamTracker.getTrackingIntervalStateFormatter().apply(poppedIntervalState));
+                }
 
                 applicationEventPublisher.publishEvent(new TrackingIntervalStatePoppedEvent(this, streamTracker.readonly(), poppedIntervalState));
             }
