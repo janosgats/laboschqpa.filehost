@@ -77,6 +77,7 @@ public class ApiInternalAuthInterServiceFilter implements Filter {
 
     private boolean shouldUrlBeSkipped(String requestUri) {
         return antPathMatcher.match(AppConstants.userAccessibleBaseUrlAntPattern, requestUri)
+                || antPathMatcher.match(AppConstants.internalNoAuthBaseUrlAntPattern, requestUri)
                 || antPathMatcher.match(AppConstants.prometheusMetricsExposeUrl, requestUri)
                 || antPathMatcher.match(AppConstants.healthPingUrlAntPattern, requestUri);
     }

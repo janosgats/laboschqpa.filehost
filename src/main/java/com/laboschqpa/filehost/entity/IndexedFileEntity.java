@@ -61,6 +61,13 @@ public class IndexedFileEntity {
     @Column(name = "mime_type")
     private String mimeType;
 
+    /**
+     * Should be derived from MIME type. Used to speed up selects.
+     * {@code Null} means "couldn't determine".
+     */
+    @Column(name = "is_image")
+    private Boolean isImage;
+
     @JoinColumn(name = "size")
     private Long size;//Size in Bytes
 

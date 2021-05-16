@@ -43,6 +43,8 @@ dependencies {
     implementation 'com.janosgats.logging:flexible-appender:1.1.5'
     implementation 'org.apache.tika:tika-core:1.24.1'
     implementation 'org.apache.tika:tika-parsers:1.24.1'
+    implementation 'io.springfox:springfox-swagger2:2.9.2'
+    implementation 'io.springfox:springfox-swagger-ui:2.9.2'
 
     runtimeOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'mysql:mysql-connector-java'

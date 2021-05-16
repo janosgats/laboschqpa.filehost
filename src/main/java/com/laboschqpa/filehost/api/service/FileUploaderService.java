@@ -218,6 +218,8 @@ public class FileUploaderService {
             log.trace("Detected MIME type: {}", detectedMediaType.toString());
 
             indexedFileEntity.setMimeType(detectedMediaType.getType() + "/" + detectedMediaType.getSubtype());
+            indexedFileEntity.setIsImage("image".equals(detectedMediaType.getType()));
+
             indexedFileEntityRepository.save(indexedFileEntity);
         } catch (Exception e) {
             log.error("Exception during Apache Tika mime type detection!", e);
