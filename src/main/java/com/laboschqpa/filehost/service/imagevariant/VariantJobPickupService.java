@@ -10,13 +10,13 @@ import com.laboschqpa.filehost.service.apiclient.imageconverter.dto.ProcessCreat
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 @Log4j2
 @RequiredArgsConstructor
@@ -29,8 +29,8 @@ public class VariantJobPickupService {
 
     private static final int PICK_UP_FAILED_JOBS_TIMEOUT_SECONDS = 10 * 60;
     private static final int PICK_UP_UNFINISHED_JOBS_TIMEOUT_SECONDS = 30 * 60;
-    private static final int LIMIT_OF_JOBS_TO_PICK_UP = 5;//TODO: extract this into a config parameter
 
+    private static final int MAX_TRIALS_ON_A_JOB = 25;
     private static final List<ImageVariantStatus> STATUSES_FOR_INSTANT_PICKUP = List.of(ImageVariantStatus.WAITING_FOR_FIRST_PICKUP);
     private static final List<ImageVariantStatus> FAILED_STATUSES = List.of(
             ImageVariantStatus.FAILED_DURING_QUEUEING,
@@ -40,7 +40,7 @@ public class VariantJobPickupService {
     private static final List<ImageVariantStatus> UNFINISHED_STATUSES = List.of(
             ImageVariantStatus.PICKED_UP,
             ImageVariantStatus.CREATION_JOB_QUEUED,
-            ImageVariantStatus.VARIANT_UNDER_UPLOAD
+            ImageVariantStatus.UNDER_UPLOAD
     );
 
 
@@ -49,15 +49,23 @@ public class VariantJobPickupService {
     private final ImageConverterApiClient imageConverterApiClient;
     private final ImageVariantRepository imageVariantRepository;
 
-    public void pickUpCreationJobs() {
-        List<Long> idsToPickUp = imageVariantRepository.getJobsIdsToPickUp(
+    @Value("${imageVariantJobs.limitOfJobsToPickUp}")
+    private Integer limitOfJobsToPickUp;
+
+    public void pickUpSomeCreationJobs() {
+        List<Long> idsToPickUp = imageVariantRepository.getJobIdsToPickUp(
                 STATUSES_FOR_INSTANT_PICKUP,
                 FAILED_STATUSES,
                 Instant.now().minusSeconds(PICK_UP_FAILED_JOBS_TIMEOUT_SECONDS),
                 UNFINISHED_STATUSES,
                 Instant.now().minusSeconds(PICK_UP_UNFINISHED_JOBS_TIMEOUT_SECONDS),
-                PageRequest.of(0, LIMIT_OF_JOBS_TO_PICK_UP)
+                MAX_TRIALS_ON_A_JOB,
+                PageRequest.of(0, limitOfJobsToPickUp)
         );
+
+        if (!idsToPickUp.isEmpty()) {
+            log.debug("Picked up {} Image Variant jobs. jobIds: {}", idsToPickUp.size(), idsToPickUp);
+        }
 
         for (long jobId : idsToPickUp) {
             tryToQueueJob(jobId);//TODO: Use an executor on a threadpool and parallelize this
@@ -72,7 +80,9 @@ public class VariantJobPickupService {
         } catch (Exception e) {
             log.error("Exception caught while queuing job. jobId: {}", jobId, e);
             try {
-                imageVariantRepository.updateStatus(jobId, ImageVariantStatus.FAILED_DURING_QUEUEING, Instant.now());
+                transactionTemplate.executeWithoutResult(transactionStatus ->
+                        imageVariantRepository.updateStatus(jobId, ImageVariantStatus.FAILED_DURING_QUEUEING, Instant.now())
+                );
             } catch (Exception innerException) {
                 log.error("Exception caught while setting ImageVariant status to failed " +
                         "after error during queueing the job. jobId: {}", jobId, innerException);
@@ -92,10 +102,8 @@ public class VariantJobPickupService {
 
     private void queueJob(long jobId) {
         transactionTemplate.executeWithoutResult(transactionStatus -> {
-            final Optional<ImageVariant> imageVariantOptional
-                    = imageVariantRepository.findById_withEagerOriginalFile_withPessimisticWriteLock(jobId);
-            final ImageVariant imageVariant = imageVariantOptional.orElseThrow(()
-                    -> new ContentNotFoundException("Cannot find ImageVariant by jobId: " + jobId));
+            final ImageVariant imageVariant = imageVariantRepository.findById_withEagerOriginalFile_withPessimisticWriteLock(jobId)
+                    .orElseThrow(() -> new ContentNotFoundException("Cannot find ImageVariant by jobId: " + jobId));
 
             if (ImageVariantStatus.SUCCEEDED == imageVariant.getStatus()) {
                 return;//The job somehow finished in the mean time

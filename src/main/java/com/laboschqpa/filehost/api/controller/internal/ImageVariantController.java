@@ -2,7 +2,9 @@ package com.laboschqpa.filehost.api.controller.internal;
 
 import com.laboschqpa.filehost.api.dto.FileUploadResponse;
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
-import com.laboschqpa.filehost.service.imagevariant.ImageVariantService;
+import com.laboschqpa.filehost.service.imagevariant.VariantSaverService;
+import com.laboschqpa.filehost.service.imagevariant.VariantCreatorService;
+import com.laboschqpa.filehost.service.imagevariant.VariantJobPickupService;
 import com.laboschqpa.filehost.service.imagevariant.command.SaveImageVariantCommand;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
@@ -20,19 +22,21 @@ import javax.servlet.http.HttpServletRequest;
 @RequestMapping("/api/internal/imageVariant")
 public class ImageVariantController {
 
-    private final ImageVariantService imageVariantService;
+    private final VariantCreatorService createMissingVariants;
+    private final VariantJobPickupService variantJobPickupService;
+    private final VariantSaverService variantSaverService;
 
-    @PostMapping("/createMissingVariants")
-    public void postCreateMissingVariants() {
+    @PostMapping("/createSomeMissingVariants")
+    public void postCreateSomeMissingVariants() {
         //TODO: Trigger something similar tho this when a new file with image mime type uploaded. (Create the variant jobs to the new file.)
-        imageVariantService.createMissingVariants();
+        createMissingVariants.createSomeMissingVariants();
         log.trace("imageVariant/createMissingVariants endpoint ran successfully");
     }
 
     @ApiOperation("Picks up A FEW jobs. Should be called frequently, periodically.")
-    @PostMapping("/pickUpCreationJobs")
-    public void postPickUpCreationJobs() {
-        imageVariantService.pickUpCreationJobs();
+    @PostMapping("/pickUpSomeCreationJobs")
+    public void postPickUpSomeCreationJobs() {
+        variantJobPickupService.pickUpSomeCreationJobs();
     }
 
     @PostMapping("/uploadVariant")
@@ -41,8 +45,7 @@ public class ImageVariantController {
         command.setJobId(jobId);
         command.setHttpServletRequest(httpServletRequest);
 
-        IndexedFileEntity createdFile = imageVariantService.saveVariant(command);
-
+        IndexedFileEntity createdFile = variantSaverService.saveVariant(command);
 
         return new FileUploadResponse(createdFile.getId(), createdFile.getMimeType());
     }

@@ -13,7 +13,7 @@ import java.time.Instant;
         indexes = {
                 @Index(columnList = "trials_count, status", name = "trials_count__status"),
                 @Index(columnList = "status_updated, trials_count", name = "status_updated__trials_count"),
-                @Index(columnList = "status, status_updated, trials_count", name = "status__status_updated__trials_count")
+                @Index(columnList = "status, status_updated, trials_count, variant_size", name = "status__status_updated__trials_count__variant_size")
         },
         uniqueConstraints = {
                 @UniqueConstraint(columnNames = {"original_file_id", "variant_size"}, name = "original_file_id__variant_size__unique"),

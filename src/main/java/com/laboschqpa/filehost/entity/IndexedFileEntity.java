@@ -1,7 +1,9 @@
 package com.laboschqpa.filehost.entity;
 
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
+import com.laboschqpa.filehost.enums.UploadType;
 import com.laboschqpa.filehost.enums.attributeconverter.IndexedFileStatusAttributeConverter;
+import com.laboschqpa.filehost.enums.attributeconverter.UploadTypeAttributeConverter;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
@@ -26,7 +28,8 @@ import java.time.Instant;
                 @Index(columnList = "status, owner_user_id, owner_team_id, creation_time", name = "status__owner_user__owner_team__creation_time"),
                 @Index(columnList = "mime_type, creation_time", name = "mime_type__creation_time"),
                 @Index(columnList = "creation_time", name = "creation_time"),
-                @Index(columnList = "size, owner_user_id, owner_team_id", name = "size__owner_user__owner_team")
+                @Index(columnList = "size, owner_user_id, owner_team_id", name = "size__owner_user__owner_team"),
+                @Index(columnList = "is_image, upload_type", name = "is_image__upload_type")
         }
 )
 @Inheritance(strategy = InheritanceType.JOINED)
@@ -48,6 +51,10 @@ public class IndexedFileEntity {
     @Convert(converter = IndexedFileStatusAttributeConverter.class)
     @Column(name = "status", nullable = false)
     private IndexedFileStatus status;
+
+    @Convert(converter = UploadTypeAttributeConverter.class)
+    @Column(name = "upload_type", nullable = false)
+    private UploadType uploadType;
 
     @Column(name = "owner_user_id", nullable = false)
     private Long ownerUserId;

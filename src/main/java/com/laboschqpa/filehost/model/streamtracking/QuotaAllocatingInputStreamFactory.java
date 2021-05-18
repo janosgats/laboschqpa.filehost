@@ -1,6 +1,7 @@
 package com.laboschqpa.filehost.model.streamtracking;
 
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
+import com.laboschqpa.filehost.enums.UploadType;
 import com.laboschqpa.filehost.model.inputstream.QuotaAllocatingInputStream;
 import com.laboschqpa.filehost.service.IndexedFileQuotaAllocator;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,8 @@ public class QuotaAllocatingInputStreamFactory {
     private final IndexedFileQuotaAllocator indexedFileQuotaAllocator;
 
     public QuotaAllocatingInputStream from(InputStream inputStream, IndexedFileEntity indexedFileEntity, Long approximateFileSize) {
-        return new QuotaAllocatingInputStream(inputStream, indexedFileEntity, approximateFileSize, indexedFileQuotaAllocator);
+        final boolean shouldEnforceUserAndTeamQuota = indexedFileEntity.getUploadType() != UploadType.IMAGE_VARIANT;
+
+        return new QuotaAllocatingInputStream(inputStream, indexedFileEntity, approximateFileSize, indexedFileQuotaAllocator, shouldEnforceUserAndTeamQuota);
     }
 }

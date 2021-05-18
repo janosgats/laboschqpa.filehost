@@ -16,19 +16,39 @@ import java.util.List;
 @Log4j2
 @RequiredArgsConstructor
 @Service
-public class MissingVariantCreatorService {
+public class VariantCreatorService {
     private static final int MISSING_CREATION_BATCH_LIMIT = 1000;
     private static final int MAX_ROUNDS_FOR_ONE_SIZE = 5;
+    private static final int[] VARIANT_SIZES = new int[]{250, 500, 1000, 2000};
 
     private final ImageVariantJdbcRepository imageVariantJdbcRepository;
     private final ImageVariantRepository imageVariantRepository;
 
-    public void createForSize(int variantSize) throws Exception {
+    public void createSomeMissingVariants() {
+        Exception lastCaughtException = null;
+
+        for (int currentSize : VARIANT_SIZES) {
+            try {
+                createSomeMissingVariantsForSize(currentSize);
+            } catch (Exception e) {
+                log.error("Exception while Creating Missing Variants for variantSize: {}", currentSize, e);
+                lastCaughtException = e;
+            }
+        }
+
+        if (lastCaughtException != null) {
+            throw new RuntimeException("Exception while Creating Missing Variants - " +
+                    lastCaughtException.getClass().getName() + ": " + lastCaughtException.getMessage(),
+                    lastCaughtException);
+        }
+    }
+
+    public void createSomeMissingVariantsForSize(int variantSize) throws Exception {
         Exception lastCaughtException = null;
 
         for (int i = 0; i < MAX_ROUNDS_FOR_ONE_SIZE; ++i) {
             try {
-                final int foundIdsCount = createOneBatchForSize(variantSize);
+                final int foundIdsCount = createOneBatchOfMissingVariantsForSize(variantSize);
                 if (foundIdsCount == 0) {
                     break;
                 }
@@ -43,9 +63,10 @@ public class MissingVariantCreatorService {
         }
     }
 
-    private int createOneBatchForSize(int variantSize) {
+    private int createOneBatchOfMissingVariantsForSize(int variantSize) {
         final List<Long> idsToCreateVariantsFor
-                = imageVariantJdbcRepository.listImageIdsWithoutVariantOfSize(variantSize, MISSING_CREATION_BATCH_LIMIT);
+                = imageVariantJdbcRepository.listImageIdsWithoutVariantOfSizeToCreateVariantsFor(
+                variantSize, MISSING_CREATION_BATCH_LIMIT);
 
         final int foundIdsCount = idsToCreateVariantsFor.size();
         if (foundIdsCount == 0) {
