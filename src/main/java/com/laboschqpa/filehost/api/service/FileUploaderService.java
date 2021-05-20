@@ -5,6 +5,7 @@ package com.laboschqpa.filehost.api.service;
 import com.laboschqpa.filehost.annotation.ExceptionWrappedFileServingClass;
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
+import com.laboschqpa.filehost.enums.UploadType;
 import com.laboschqpa.filehost.enums.apierrordescriptor.UploadApiError;
 import com.laboschqpa.filehost.exceptions.apierrordescriptor.InvalidUploadRequestException;
 import com.laboschqpa.filehost.exceptions.apierrordescriptor.QuotaExceededException;
@@ -18,6 +19,7 @@ import com.laboschqpa.filehost.model.streamtracking.QuotaAllocatingInputStreamFa
 import com.laboschqpa.filehost.model.streamtracking.TrackingInputStreamFactory;
 import com.laboschqpa.filehost.model.upload.FileUploadRequest;
 import com.laboschqpa.filehost.repo.IndexedFileEntityRepository;
+import com.laboschqpa.filehost.service.imagevariant.VariantCreatorService;
 import com.laboschqpa.filehost.util.FileUploadUtils;
 import com.laboschqpa.filehost.util.IOExceptionUtils;
 import com.laboschqpa.filehost.util.fileuploadconfigurer.FileUploadConfigurerFactory;
@@ -47,10 +49,12 @@ public class FileUploaderService {
     private static final int MB = 1000 * 1000;
     private static final int TIKA_REREADABLE_STREAM_MAX_BYTES_IN_MEMORY = 1 * MB;
     private static final String FORM_FIELD_NAME_APPROXIMATE_FILE_SIZE = "approximateFileSize";
+    private static final String MIME_TYPE_IMAGE = "image";
 
     private final ServletFileUpload servletFileUpload = new ServletFileUpload();
 
     private final FileUploadConfigurerFactory fileUploadConfigurerFactory;
+    private final VariantCreatorService variantCreatorService;
     private final UploadableFileFactory uploadableFileFactory;
     private final IndexedFileEntityRepository indexedFileEntityRepository;
     private final TrackingInputStreamFactory trackingInputStreamFactory;
@@ -100,7 +104,13 @@ public class FileUploaderService {
 
             IndexedFileEntity newlySavedFile = saveNewFile(fileUploadRequest, uploadedFileTrackingInputStream,
                     normalizedFileName, approximateFileSize);
+
             handleStreamClose(uploadedFileTrackingInputStream, false);
+
+            if (fileUploadRequest.getUploadType() != UploadType.IMAGE_VARIANT) {
+                createFileVariantsIfNeeded(newlySavedFile);
+            }
+
             return newlySavedFile;
         } catch (InvalidUploadRequestException | QuotaExceededException e) {
             handleStreamClose(uploadedFileTrackingInputStream, false);
@@ -218,7 +228,7 @@ public class FileUploaderService {
             log.trace("Detected MIME type: {}", detectedMediaType.toString());
 
             indexedFileEntity.setMimeType(detectedMediaType.getType() + "/" + detectedMediaType.getSubtype());
-            indexedFileEntity.setIsImage("image".equals(detectedMediaType.getType()));
+            indexedFileEntity.setIsImage(MIME_TYPE_IMAGE.equals(detectedMediaType.getType()));
 
             indexedFileEntityRepository.save(indexedFileEntity);
         } catch (Exception e) {
@@ -249,6 +259,15 @@ public class FileUploaderService {
             indexedFileEntityRepository.save(indexedFile.getEntity());
         } catch (Exception ex) {
             log.error("Exception while marking uploaded file as {}", statusToMarkAs, ex);
+        }
+    }
+
+    private void createFileVariantsIfNeeded(IndexedFileEntity newlySavedFile) {
+        try {
+            variantCreatorService.createMissingVariantsForFile(newlySavedFile);
+        } catch (Exception e) {
+            log.error("Error while creating variants for newly uploaded file. fileId: {}",
+                    newlySavedFile.getId(), e);
         }
     }
 }

@@ -41,7 +41,7 @@ public class ImageVariant {
     @Column(name = "status", nullable = false)
     private ImageVariantStatus status;
 
-    @Column(name = "status_updated", nullable = false)
+    @Column(name = "status_updated", columnDefinition = "datetime", nullable = false)
     private Instant statusUpdated;
 
     @Column(name = "trials_count", nullable = false)

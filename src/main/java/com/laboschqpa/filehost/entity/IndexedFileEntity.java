@@ -62,7 +62,7 @@ public class IndexedFileEntity {
     @Column(name = "owner_team_id", nullable = false)
     private Long ownerTeamId;
 
-    @Column(name = "creation_time", nullable = false)
+    @Column(name = "creation_time", columnDefinition = "datetime", nullable = false)
     private Instant creationTime;
 
     @Column(name = "mime_type")

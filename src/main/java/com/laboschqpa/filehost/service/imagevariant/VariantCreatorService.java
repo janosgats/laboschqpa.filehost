@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Log4j2
 @RequiredArgsConstructor
@@ -85,6 +87,30 @@ public class VariantCreatorService {
         log.debug("Created {} pcs of Image Variants for size {}", variantsToSave.size(), variantSize);
 
         return foundIdsCount;
+    }
+
+    public void createMissingVariantsForFile(IndexedFileEntity indexedFileEntity) {
+        if (!indexedFileEntity.getIsImage()) {
+            return;
+        }
+
+        final long originalFileId = indexedFileEntity.getId();
+        final List<ImageVariant> existingVariants = imageVariantRepository.findAllByOriginalFileId(originalFileId);
+        final Set<Integer> existingVariantSizes = existingVariants.stream()
+                .map(ImageVariant::getVariantSize)
+                .collect(Collectors.toSet());
+
+        final Instant now = Instant.now();
+        final List<ImageVariant> variantsToSave = new ArrayList<>(VARIANT_SIZES.length);
+        for (int currentSize : VARIANT_SIZES) {
+            if (!existingVariantSizes.contains(currentSize)) {
+                variantsToSave.add(createNewMissingVariantEntity(originalFileId, currentSize, now));
+            }
+        }
+        imageVariantRepository.saveAll(variantsToSave);
+        imageVariantRepository.flush();
+        log.debug("Created {} pcs of Image Variants for file: {}",
+                variantsToSave.size(), originalFileId);
     }
 
     private ImageVariant createNewMissingVariantEntity(long originalFileId, int variantSize, Instant now) {

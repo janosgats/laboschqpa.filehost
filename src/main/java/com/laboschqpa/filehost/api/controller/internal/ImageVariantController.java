@@ -2,9 +2,9 @@ package com.laboschqpa.filehost.api.controller.internal;
 
 import com.laboschqpa.filehost.api.dto.FileUploadResponse;
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
-import com.laboschqpa.filehost.service.imagevariant.VariantSaverService;
 import com.laboschqpa.filehost.service.imagevariant.VariantCreatorService;
 import com.laboschqpa.filehost.service.imagevariant.VariantJobPickupService;
+import com.laboschqpa.filehost.service.imagevariant.VariantSaverService;
 import com.laboschqpa.filehost.service.imagevariant.command.SaveImageVariantCommand;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
@@ -22,14 +22,13 @@ import javax.servlet.http.HttpServletRequest;
 @RequestMapping("/api/internal/imageVariant")
 public class ImageVariantController {
 
-    private final VariantCreatorService createMissingVariants;
+    private final VariantCreatorService variantCreatorService;
     private final VariantJobPickupService variantJobPickupService;
     private final VariantSaverService variantSaverService;
 
     @PostMapping("/createSomeMissingVariants")
     public void postCreateSomeMissingVariants() {
-        //TODO: Trigger something similar tho this when a new file with image mime type uploaded. (Create the variant jobs to the new file.)
-        createMissingVariants.createSomeMissingVariants();
+        variantCreatorService.createSomeMissingVariants();
         log.trace("imageVariant/createMissingVariants endpoint ran successfully");
     }
 
@@ -39,6 +38,7 @@ public class ImageVariantController {
         variantJobPickupService.pickUpSomeCreationJobs();
     }
 
+    @ApiOperation("To upload the result of a variant creation job.")
     @PostMapping("/uploadVariant")
     public FileUploadResponse postUploadImage(@RequestParam("jobId") Long jobId, HttpServletRequest httpServletRequest) {
         final SaveImageVariantCommand command = new SaveImageVariantCommand();

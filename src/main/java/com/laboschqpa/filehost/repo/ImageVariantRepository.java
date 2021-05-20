@@ -43,4 +43,6 @@ public interface ImageVariantRepository extends JpaRepository<ImageVariant, Long
     @Query("update ImageVariant v set v.status = :newStatus, v.statusUpdated = :statusUpdated where v.jobId = :id")
     void updateStatus(@Param("id") long id, @Param("newStatus") ImageVariantStatus newStatus,
                       @Param("statusUpdated") Instant statusUpdated);
+
+    List<ImageVariant> findAllByOriginalFileId(long originalFileId);
 }
