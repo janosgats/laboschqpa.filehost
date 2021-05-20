@@ -21,22 +21,7 @@ import javax.servlet.http.HttpServletRequest;
 @RestController
 @RequestMapping("/api/internal/imageVariant")
 public class ImageVariantController {
-
-    private final VariantCreatorService variantCreatorService;
-    private final VariantJobPickupService variantJobPickupService;
     private final VariantSaverService variantSaverService;
-
-    @PostMapping("/createSomeMissingVariants")
-    public void postCreateSomeMissingVariants() {
-        variantCreatorService.createSomeMissingVariants();
-        log.trace("imageVariant/createMissingVariants endpoint ran successfully");
-    }
-
-    @ApiOperation("Picks up A FEW jobs. Should be called frequently, periodically.")
-    @PostMapping("/pickUpSomeCreationJobs")
-    public void postPickUpSomeCreationJobs() {
-        variantJobPickupService.pickUpSomeCreationJobs();
-    }
 
     @ApiOperation("To upload the result of a variant creation job.")
     @PostMapping("/uploadVariant")
