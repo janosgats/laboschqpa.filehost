@@ -2,18 +2,22 @@ package com.laboschqpa.filehost.enums;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.laboschqpa.filehost.exceptions.NotImplementedException;
+import lombok.Getter;
 
 import java.util.Arrays;
 import java.util.Optional;
 
-public enum UploadType {
-    BY_USER(1),
-    IMAGE_VARIANT(2);
+public enum UploadKind {
+    BY_USER(1, true),
+    IMAGE_VARIANT(2, false);
 
     private Integer value;
+    @Getter
+    private boolean shouldEnforceUserAndTeamQuota;
 
-    UploadType(Integer value) {
+    UploadKind(Integer value, boolean shouldEnforceUserAndTeamQuota) {
         this.value = value;
+        this.shouldEnforceUserAndTeamQuota = shouldEnforceUserAndTeamQuota;
     }
 
     @JsonValue
@@ -21,8 +25,8 @@ public enum UploadType {
         return value;
     }
 
-    public static UploadType fromValue(Integer value) {
-        Optional<UploadType> optional = Arrays.stream(UploadType.values())
+    public static UploadKind fromValue(Integer value) {
+        Optional<UploadKind> optional = Arrays.stream(UploadKind.values())
                 .filter(en -> en.getValue().equals(value))
                 .findFirst();
 

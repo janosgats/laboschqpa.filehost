@@ -2,7 +2,7 @@ package com.laboschqpa.filehost.model.file;
 
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
-import com.laboschqpa.filehost.enums.UploadType;
+import com.laboschqpa.filehost.enums.UploadKind;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -30,8 +30,8 @@ public class AbstractIndexedFile<T extends IndexedFileEntity> implements Indexed
     }
 
     @Override
-    public UploadType getUploadType() {
-        return indexedFileEntity.getUploadType();
+    public UploadKind getUploadKind() {
+        return indexedFileEntity.getUploadKind();
     }
 
     @Override

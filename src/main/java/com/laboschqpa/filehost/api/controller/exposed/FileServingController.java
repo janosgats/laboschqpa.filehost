@@ -6,7 +6,7 @@ import com.laboschqpa.filehost.api.service.FileUploaderService;
 import com.laboschqpa.filehost.config.AppConstants;
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
 import com.laboschqpa.filehost.enums.FileAccessType;
-import com.laboschqpa.filehost.enums.UploadType;
+import com.laboschqpa.filehost.enums.UploadKind;
 import com.laboschqpa.filehost.enums.UploadedFileType;
 import com.laboschqpa.filehost.model.upload.FileUploadRequest;
 import com.laboschqpa.filehost.service.fileservingauth.AuthorizeRequestResult;
@@ -56,7 +56,7 @@ public class FileServingController {
                 = new FileUploadRequest(
                 authorizeRequestReturn.getLoggedInUserId(),
                 authorizeRequestReturn.getLoggedInUserTeamId(),
-                UploadType.BY_USER,
+                UploadKind.BY_USER,
                 forcedFileType);
 
         return fileUploaderService.uploadFile(fileUploadRequest, httpServletRequest);

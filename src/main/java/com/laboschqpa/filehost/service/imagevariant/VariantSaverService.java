@@ -5,7 +5,7 @@ import com.laboschqpa.filehost.entity.ImageVariant;
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
 import com.laboschqpa.filehost.enums.ImageVariantStatus;
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
-import com.laboschqpa.filehost.enums.UploadType;
+import com.laboschqpa.filehost.enums.UploadKind;
 import com.laboschqpa.filehost.enums.UploadedFileType;
 import com.laboschqpa.filehost.exceptions.ConflictingRequestDataApiException;
 import com.laboschqpa.filehost.exceptions.apierrordescriptor.ContentNotFoundException;
@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
-import java.util.Optional;
 
 @Log4j2
 @RequiredArgsConstructor
@@ -57,7 +56,7 @@ public class VariantSaverService {
         final FileUploadRequest fileUploadRequest = new FileUploadRequest(
                 variantUnderSave.getOriginalFile().getOwnerUserId(),
                 variantUnderSave.getOriginalFile().getOwnerTeamId(),
-                UploadType.IMAGE_VARIANT,
+                UploadKind.IMAGE_VARIANT,
                 UploadedFileType.IMAGE);
 
         try {

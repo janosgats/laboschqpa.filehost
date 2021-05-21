@@ -5,7 +5,7 @@ package com.laboschqpa.filehost.api.service;
 import com.laboschqpa.filehost.annotation.ExceptionWrappedFileServingClass;
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
-import com.laboschqpa.filehost.enums.UploadType;
+import com.laboschqpa.filehost.enums.UploadKind;
 import com.laboschqpa.filehost.enums.apierrordescriptor.UploadApiError;
 import com.laboschqpa.filehost.exceptions.apierrordescriptor.InvalidUploadRequestException;
 import com.laboschqpa.filehost.exceptions.apierrordescriptor.QuotaExceededException;
@@ -107,7 +107,7 @@ public class FileUploaderService {
 
             handleStreamClose(uploadedFileTrackingInputStream, false);
 
-            if (fileUploadRequest.getUploadType() != UploadType.IMAGE_VARIANT) {
+            if (fileUploadRequest.getUploadKind() != UploadKind.IMAGE_VARIANT) {
                 createFileVariantsIfNeeded(newlySavedFile);
             }
 

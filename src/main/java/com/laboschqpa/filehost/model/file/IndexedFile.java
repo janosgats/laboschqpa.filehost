@@ -2,7 +2,7 @@ package com.laboschqpa.filehost.model.file;
 
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
-import com.laboschqpa.filehost.enums.UploadType;
+import com.laboschqpa.filehost.enums.UploadKind;
 
 import java.time.Instant;
 
@@ -27,7 +27,7 @@ public interface IndexedFile {
     /**
      * Gets the purpose of the file.
      */
-    UploadType getUploadType();
+    UploadKind getUploadKind();
 
     /**
      * Gets the stream length in bytes.
