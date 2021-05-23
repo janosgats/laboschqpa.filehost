@@ -3,6 +3,7 @@ package com.laboschqpa.filehost.api.service;
 import com.laboschqpa.filehost.annotation.ExceptionWrappedFileServingClass;
 import com.laboschqpa.filehost.entity.ImageVariant;
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
+import com.laboschqpa.filehost.enums.ImageVariantStatus;
 import com.laboschqpa.filehost.enums.apierrordescriptor.FileServingApiError;
 import com.laboschqpa.filehost.exceptions.apierrordescriptor.ContentNotFoundException;
 import com.laboschqpa.filehost.exceptions.apierrordescriptor.FileServingException;
@@ -79,7 +80,8 @@ public class FileDownloaderService {
     }
 
     private IndexedFileEntity getImageVariantFileToServe(IndexedFileEntity originalFileEntity, int wantedImageSize) {
-        final List<ImageVariant> variants = imageVariantRepository.findAllByOriginalFileId(originalFileEntity.getId());
+        final List<ImageVariant> variants
+                = imageVariantRepository.findAllByOriginalFileIdAndStatus(originalFileEntity.getId(), ImageVariantStatus.SUCCEEDED);
 
         if (variants.isEmpty()) {
             return originalFileEntity;

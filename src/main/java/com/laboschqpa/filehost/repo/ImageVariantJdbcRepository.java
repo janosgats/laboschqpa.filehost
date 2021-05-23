@@ -31,7 +31,7 @@ public class ImageVariantJdbcRepository {
                         " where " +
                         "        f.status = " + INDEXED_FILE_STATUS_AVAILABLE + " " +
                         "     and f.is_image = TRUE " +
-                        "     and f.upload_type <> " + UPLOAD_KIND_IMAGE_VARIANT + " " +
+                        "     and f.upload_kind <> " + UPLOAD_KIND_IMAGE_VARIANT + " " +
                         "     and v.job_id is null " +
                         " limit ?"
                 ,

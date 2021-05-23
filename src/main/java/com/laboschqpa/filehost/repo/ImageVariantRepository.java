@@ -45,4 +45,6 @@ public interface ImageVariantRepository extends JpaRepository<ImageVariant, Long
                       @Param("statusUpdated") Instant statusUpdated);
 
     List<ImageVariant> findAllByOriginalFileId(long originalFileId);
+
+    List<ImageVariant> findAllByOriginalFileIdAndStatus(long originalFileId, ImageVariantStatus status);
 }

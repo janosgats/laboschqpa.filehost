@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 public class VariantCreatorService {
     private static final int MISSING_CREATION_BATCH_LIMIT = 1000;
     private static final int MAX_ROUNDS_FOR_ONE_SIZE = 5;
-    private static final int[] VARIANT_SIZES = new int[]{250, 500, 1000, 2000};
+    private static final int[] VARIANT_SIZES = new int[]{300, 500, 800, 1200, 2000};
 
     private final ImageVariantJdbcRepository imageVariantJdbcRepository;
     private final ImageVariantRepository imageVariantRepository;
