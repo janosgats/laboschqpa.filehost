@@ -49,7 +49,7 @@ public class VariantSaverService {
         }
     }
 
-    public IndexedFileEntity saveVariantInternal(SaveImageVariantCommand command) {
+    private IndexedFileEntity saveVariantInternal(SaveImageVariantCommand command) {
         final long jobId = command.getJobId();
         final ImageVariant variantUnderSave = getPreparedVariantForUpload(jobId);
 

@@ -39,6 +39,10 @@ public interface ImageVariantRepository extends JpaRepository<ImageVariant, Long
     @Query("select v from ImageVariant v where v.jobId = :id")
     Optional<ImageVariant> findById_withEagerOriginalFile_withPessimisticWriteLock(@Param("id") long id);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select v from ImageVariant v where v.jobId = :id")
+    Optional<ImageVariant> findById_withPessimisticWriteLock(@Param("id") long id);
+
     @Modifying
     @Query("update ImageVariant v set v.status = :newStatus, v.statusUpdated = :statusUpdated where v.jobId = :id")
     void updateStatus(@Param("id") long id, @Param("newStatus") ImageVariantStatus newStatus,

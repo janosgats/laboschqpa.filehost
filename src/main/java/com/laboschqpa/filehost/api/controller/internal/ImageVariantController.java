@@ -2,9 +2,8 @@ package com.laboschqpa.filehost.api.controller.internal;
 
 import com.laboschqpa.filehost.api.dto.FileUploadResponse;
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
-import com.laboschqpa.filehost.service.imagevariant.VariantCreatorService;
-import com.laboschqpa.filehost.service.imagevariant.VariantJobPickupService;
 import com.laboschqpa.filehost.service.imagevariant.VariantSaverService;
+import com.laboschqpa.filehost.service.imagevariant.VariantService;
 import com.laboschqpa.filehost.service.imagevariant.command.SaveImageVariantCommand;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +21,7 @@ import javax.servlet.http.HttpServletRequest;
 @RequestMapping("/api/internal/imageVariant")
 public class ImageVariantController {
     private final VariantSaverService variantSaverService;
+    private final VariantService variantService;
 
     @ApiOperation("To upload the result of a variant creation job.")
     @PostMapping("/uploadVariant")
@@ -33,5 +33,10 @@ public class ImageVariantController {
         IndexedFileEntity createdFile = variantSaverService.saveVariant(command);
 
         return new FileUploadResponse(createdFile.getId(), createdFile.getMimeType());
+    }
+
+    @PostMapping("/signalJobFailedInJobProcessor")
+    public void postSignalFailedJobInJobProcessor(@RequestParam("jobId") Long jobId) {
+        variantService.signalJobFailedInJobProcessor(jobId);
     }
 }
