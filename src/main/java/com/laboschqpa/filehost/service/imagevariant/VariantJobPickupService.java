@@ -23,7 +23,7 @@ import java.util.List;
 @Service
 public class VariantJobPickupService {
     private static final String PICKED_UP_IMAGE_VARIANT_JOB_COUNT = "picked_up_image_variant_job_count";
-    private static final String TAG_NAME_RESULT = "result";
+    private static final String TAG_NAME_QUEUING_RESULT = "queuingResult";
     private static final String TAG_VALUE_SUCCESS = "success";
     private static final String TAG_VALUE_FAILURE = "failure";
 
@@ -91,7 +91,7 @@ public class VariantJobPickupService {
             final String resultTag = isSucceeded ? TAG_VALUE_SUCCESS : TAG_VALUE_FAILURE;
             try {
                 meterRegistry.counter(PICKED_UP_IMAGE_VARIANT_JOB_COUNT,
-                        TAG_NAME_RESULT, resultTag
+                        TAG_NAME_QUEUING_RESULT, resultTag
                 ).increment();
             } catch (Exception innerException) {
                 log.error("Exception caught while incrementing MeterRegistry counter after ImageVariant job pickup. " +
