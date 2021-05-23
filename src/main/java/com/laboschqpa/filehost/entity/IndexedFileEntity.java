@@ -1,7 +1,9 @@
 package com.laboschqpa.filehost.entity;
 
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
+import com.laboschqpa.filehost.enums.UploadKind;
 import com.laboschqpa.filehost.enums.attributeconverter.IndexedFileStatusAttributeConverter;
+import com.laboschqpa.filehost.enums.attributeconverter.UploadKindAttributeConverter;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
@@ -26,7 +28,8 @@ import java.time.Instant;
                 @Index(columnList = "status, owner_user_id, owner_team_id, creation_time", name = "status__owner_user__owner_team__creation_time"),
                 @Index(columnList = "mime_type, creation_time", name = "mime_type__creation_time"),
                 @Index(columnList = "creation_time", name = "creation_time"),
-                @Index(columnList = "size, owner_user_id, owner_team_id", name = "size__owner_user__owner_team")
+                @Index(columnList = "size, owner_user_id, owner_team_id", name = "size__owner_user__owner_team"),
+                @Index(columnList = "is_image, upload_kind", name = "is_image__upload_kind")
         }
 )
 @Inheritance(strategy = InheritanceType.JOINED)
@@ -49,17 +52,28 @@ public class IndexedFileEntity {
     @Column(name = "status", nullable = false)
     private IndexedFileStatus status;
 
+    @Convert(converter = UploadKindAttributeConverter.class)
+    @Column(name = "upload_kind", nullable = false)
+    private UploadKind uploadKind;
+
     @Column(name = "owner_user_id", nullable = false)
     private Long ownerUserId;
 
     @Column(name = "owner_team_id", nullable = false)
     private Long ownerTeamId;
 
-    @Column(name = "creation_time", nullable = false)
+    @Column(name = "creation_time", columnDefinition = "datetime", nullable = false)
     private Instant creationTime;
 
     @Column(name = "mime_type")
     private String mimeType;
+
+    /**
+     * Should be derived from MIME type. Used to speed up selects.
+     * {@code Null} means "couldn't determine".
+     */
+    @Column(name = "is_image")
+    private Boolean isImage;
 
     @JoinColumn(name = "size")
     private Long size;//Size in Bytes

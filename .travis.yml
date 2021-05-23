@@ -37,7 +37,7 @@ jobs:
         - docker push ${IMAGE_NAME_BRANCH}
 
     - stage: DeployToGKE
-      if: env(SKIP_DEPLOY_TO_GKE) != "true" AND (branch = master OR env(FORCE_DEPLOY_TO_GKE) = "true")
+      if: env(SKIP_DEPLOY_TO_GKE) != "true" AND ((branch = master AND NOT type = pull_request) OR env(FORCE_DEPLOY_TO_GKE) = "true")
       script: skip
       before_install:
         - echo ${GKE_SERVICE_ACCOUNT_BASE64} | base64 --decode > gke-service-account.json
@@ -47,7 +47,7 @@ jobs:
         - gcloud auth activate-service-account --key-file gke-service-account.json
         - gcloud config set project ringed-bebop-312422
         - gcloud config set compute/zone europe-central2-a
-        - gcloud container clusters get-credentials laboschqpa-1
+        - gcloud container clusters get-credentials laboschqpa-2
         - ls -lah
       install:
         - kubectl -n=qpa set image deployments/filehost filehost=${IMAGE_NAME_COMMIT}

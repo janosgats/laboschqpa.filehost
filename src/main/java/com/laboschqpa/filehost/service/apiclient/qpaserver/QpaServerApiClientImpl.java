@@ -1,6 +1,5 @@
 package com.laboschqpa.filehost.service.apiclient.qpaserver;
 
-import com.laboschqpa.filehost.annotation.ExceptionWrappedApiClient;
 import com.laboschqpa.filehost.service.apiclient.AbstractApiClient;
 import com.laboschqpa.filehost.service.apiclient.ApiCallerFactory;
 import com.laboschqpa.filehost.service.apiclient.qpaserver.dto.IsUserAuthorizedToResourceRequestDto;
@@ -12,7 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
 
 @Service
-@ExceptionWrappedApiClient
 public class QpaServerApiClientImpl extends AbstractApiClient implements QpaServerApiClient {
 
     @Value("${apiClient.qpaServer.baseUrl}")
@@ -38,7 +36,7 @@ public class QpaServerApiClientImpl extends AbstractApiClient implements QpaServ
                 null,
                 BodyInserters.fromValue(isUserAuthorizedToResourceRequestDto),
                 httpHeaders
-        );
+        ).block();
     }
 
 

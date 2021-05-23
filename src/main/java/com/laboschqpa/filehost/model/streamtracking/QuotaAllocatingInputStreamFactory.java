@@ -14,6 +14,8 @@ public class QuotaAllocatingInputStreamFactory {
     private final IndexedFileQuotaAllocator indexedFileQuotaAllocator;
 
     public QuotaAllocatingInputStream from(InputStream inputStream, IndexedFileEntity indexedFileEntity, Long approximateFileSize) {
-        return new QuotaAllocatingInputStream(inputStream, indexedFileEntity, approximateFileSize, indexedFileQuotaAllocator);
+        final boolean shouldEnforceUserAndTeamQuota = indexedFileEntity.getUploadKind().isShouldEnforceUserAndTeamQuota();
+
+        return new QuotaAllocatingInputStream(inputStream, indexedFileEntity, approximateFileSize, indexedFileQuotaAllocator, shouldEnforceUserAndTeamQuota);
     }
 }

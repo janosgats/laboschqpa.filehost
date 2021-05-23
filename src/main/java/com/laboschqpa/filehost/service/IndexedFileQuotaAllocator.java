@@ -38,7 +38,8 @@ public class IndexedFileQuotaAllocator {
      * @return All bytes allocated for the resource.
      * @throws QuotaExceededException if no quota left
      */
-    public long allocateQuota(IndexedFileEntity indexedFileEntity, long bytesReadSoFar, Long approximateFileSize) {
+    public long allocateQuota(IndexedFileEntity indexedFileEntity, long bytesReadSoFar, Long approximateFileSize,
+                              boolean shouldEnforceUserAndTeamQuota) {
         final Quota userQuota = getQuota(QuotaSubjectCategory.USER, indexedFileEntity.getOwnerUserId());
         final Quota teamQuota = getQuota(QuotaSubjectCategory.TEAM, indexedFileEntity.getOwnerTeamId());
 
@@ -46,37 +47,30 @@ public class IndexedFileQuotaAllocator {
         final QuotaResourceUsageJpaDto userResourceUsageBefore = resourceUsages.getFirst();
         final QuotaResourceUsageJpaDto teamResourceUsageBefore = resourceUsages.getSecond();
 
-        assertQuotaIsNotExceeded(userQuota, userResourceUsageBefore, teamQuota, teamResourceUsageBefore);
+        if (shouldEnforceUserAndTeamQuota) {
+            assertQuotaIsNotExceeded(userQuota, userResourceUsageBefore, teamQuota, teamResourceUsageBefore);
+        }
 
         final long userFreeBytes = userQuota.getLimitBytes() - userResourceUsageBefore.getUsedBytes();
         final long teamFreeBytes = teamQuota.getLimitBytes() - teamResourceUsageBefore.getUsedBytes();
 
+
         if (approximateFileSize != null && bytesReadSoFar < (approximateFileSize * 0.9d)) {
             long newBytesToAllocate = approximateFileSize - bytesReadSoFar;
 
-            if (userFreeBytes < newBytesToAllocate) {
-                throw new QuotaExceededException(QuotaExceededApiError.USER_QUOTA_EXCEEDED,
-                        "Uploading the file would exceed user storage quota!");
-            }
-            if (teamFreeBytes < newBytesToAllocate) {
-                throw new QuotaExceededException(QuotaExceededApiError.TEAM_QUOTA_EXCEEDED,
-                        "Uploading the file would exceed team storage quota!");
+            if (shouldEnforceUserAndTeamQuota) {
+                if (userFreeBytes < newBytesToAllocate) {
+                    throw new QuotaExceededException(QuotaExceededApiError.USER_QUOTA_EXCEEDED,
+                            "Uploading the file would exceed user storage quota!");
+                }
+                if (teamFreeBytes < newBytesToAllocate) {
+                    throw new QuotaExceededException(QuotaExceededApiError.TEAM_QUOTA_EXCEEDED,
+                            "Uploading the file would exceed team storage quota!");
+                }
             }
 
             long completeFileSize = bytesReadSoFar + newBytesToAllocate;
-            allocateBytes(completeFileSize, indexedFileEntity, userQuota, teamQuota);
-            return completeFileSize;
-        } else if (approximateFileSize != null) {
-            final long wantedNewBytes;
-            if (approximateFileSize / (double) bytesReadSoFar < 2) {
-                wantedNewBytes = (long) (approximateFileSize * 0.34d);
-            } else {
-                wantedNewBytes = (long) (bytesReadSoFar * 0.34d);
-            }
-
-            final long newBytesToAllocate = limitWantedBytesAccordingToFreeSpace(wantedNewBytes, userFreeBytes, teamFreeBytes);
-            final long completeFileSize = bytesReadSoFar + newBytesToAllocate;
-            allocateBytes(completeFileSize, indexedFileEntity, userQuota, teamQuota);
+            allocateBytes(completeFileSize, indexedFileEntity, userQuota, teamQuota, shouldEnforceUserAndTeamQuota);
             return completeFileSize;
         }
 
@@ -84,12 +78,17 @@ public class IndexedFileQuotaAllocator {
         if (bytesReadSoFar < 13 * MB) {
             wantedNewBytes = 5 * MB;
         } else {
-            wantedNewBytes = (long) (bytesReadSoFar * 0.34d);
+            wantedNewBytes = (long) Math.max(0.34d * bytesReadSoFar, 150 * MB);
         }
 
-        final long newBytesToAllocate = limitWantedBytesAccordingToFreeSpace(wantedNewBytes, userFreeBytes, teamFreeBytes);
+        final long newBytesToAllocate;
+        if (shouldEnforceUserAndTeamQuota) {
+            newBytesToAllocate = limitWantedBytesAccordingToFreeSpace(wantedNewBytes, userFreeBytes, teamFreeBytes);
+        } else {
+            newBytesToAllocate = wantedNewBytes;
+        }
         final long completeFileSize = bytesReadSoFar + newBytesToAllocate;
-        allocateBytes(completeFileSize, indexedFileEntity, userQuota, teamQuota);
+        allocateBytes(completeFileSize, indexedFileEntity, userQuota, teamQuota, shouldEnforceUserAndTeamQuota);
         return completeFileSize;
 
         //TODO: Eliminate the magic numbers!
@@ -111,15 +110,18 @@ public class IndexedFileQuotaAllocator {
         return Math.min(userLimitedBytes, teamLimitedBytes);
     }
 
-    private void allocateBytes(long completeFileSize, IndexedFileEntity indexedFileEntity, Quota userQuota, Quota teamQuota) {
+    private void allocateBytes(long completeFileSize, IndexedFileEntity indexedFileEntity, Quota userQuota, Quota teamQuota,
+                               boolean shouldEnforceUserAndTeamQuota) {
         indexedFileEntity.setSize(completeFileSize);
         indexedFileEntityRepository.save(indexedFileEntity);
 
-        final Pair<QuotaResourceUsageJpaDto, QuotaResourceUsageJpaDto> resourceUsages = getQuotaResourceUsage(indexedFileEntity);
-        final QuotaResourceUsageJpaDto userResourceUsageBefore = resourceUsages.getFirst();
-        final QuotaResourceUsageJpaDto teamResourceUsageBefore = resourceUsages.getSecond();
+        if (shouldEnforceUserAndTeamQuota) {
+            final Pair<QuotaResourceUsageJpaDto, QuotaResourceUsageJpaDto> resourceUsages = getQuotaResourceUsage(indexedFileEntity);
+            final QuotaResourceUsageJpaDto userResourceUsageBefore = resourceUsages.getFirst();
+            final QuotaResourceUsageJpaDto teamResourceUsageBefore = resourceUsages.getSecond();
 
-        assertQuotaIsNotExceeded(userQuota, userResourceUsageBefore, teamQuota, teamResourceUsageBefore);
+            assertQuotaIsNotExceeded(userQuota, userResourceUsageBefore, teamQuota, teamResourceUsageBefore);
+        }
         log.trace("Allocated storage for file: {}, user: {}, team: {}. completeFileSize: {}MB",
                 indexedFileEntity.getId(), userQuota.getSubjectId(), teamQuota.getSubjectId(), (double) completeFileSize / MB);
     }

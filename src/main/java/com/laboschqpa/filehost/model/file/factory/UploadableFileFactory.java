@@ -50,6 +50,7 @@ public class UploadableFileFactory {
     private LocalDiskFileEntity createLocalDiskFileEntityForUploadedFile(FileUploadRequest fileUploadRequest, String fileName) {
         LocalDiskFileEntity localDiskFileEntity = LocalDiskFileEntity.builder()
                 .status(IndexedFileStatus.ADDED_TO_DATABASE_INDEX)
+                .uploadKind(fileUploadRequest.getUploadKind())
                 .name(fileName)
                 .ownerUserId(fileUploadRequest.getLoggedInUserId())
                 .ownerTeamId(fileUploadRequest.getLoggedInUserTeamId())
@@ -67,6 +68,7 @@ public class UploadableFileFactory {
     private S3FileEntity createS3FileEntityForUploadedFile(FileUploadRequest fileUploadRequest, String fileName) {
         S3FileEntity s3FileEntity = S3FileEntity.builder()
                 .status(IndexedFileStatus.ADDED_TO_DATABASE_INDEX)
+                .uploadKind(fileUploadRequest.getUploadKind())
                 .name(fileName)
                 .ownerUserId(fileUploadRequest.getLoggedInUserId())
                 .ownerTeamId(fileUploadRequest.getLoggedInUserTeamId())

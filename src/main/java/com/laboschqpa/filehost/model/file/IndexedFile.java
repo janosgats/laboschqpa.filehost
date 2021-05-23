@@ -2,6 +2,7 @@ package com.laboschqpa.filehost.model.file;
 
 import com.laboschqpa.filehost.entity.IndexedFileEntity;
 import com.laboschqpa.filehost.enums.IndexedFileStatus;
+import com.laboschqpa.filehost.enums.UploadKind;
 
 import java.time.Instant;
 
@@ -19,9 +20,14 @@ public interface IndexedFile {
     /**
      * Gets the {@link IndexedFileStatus} of the file.
      */
-    default IndexedFileStatus getStatus(){
+    default IndexedFileStatus getStatus() {
         return getEntity().getStatus();
     }
+
+    /**
+     * Gets the purpose of the file.
+     */
+    UploadKind getUploadKind();
 
     /**
      * Gets the stream length in bytes.

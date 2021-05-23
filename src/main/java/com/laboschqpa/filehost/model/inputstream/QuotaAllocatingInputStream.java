@@ -14,6 +14,7 @@ public class QuotaAllocatingInputStream extends InputStream implements CountingI
     private final IndexedFileEntity indexedFileEntity;
     private final Long approximateFileSize;
     private final IndexedFileQuotaAllocator indexedFileQuotaAllocator;
+    private final boolean shouldEnforceUserAndTeamQuota;
 
     private long countOfReadBytes = 0;
     private long allAllocatedBytes = 0;
@@ -37,7 +38,8 @@ public class QuotaAllocatingInputStream extends InputStream implements CountingI
         if (newlyReadBytes >= 0) {
             countOfReadBytes += newlyReadBytes;
             if (countOfReadBytes > allAllocatedBytes) {
-                allAllocatedBytes = indexedFileQuotaAllocator.allocateQuota(indexedFileEntity, countOfReadBytes, approximateFileSize);
+                allAllocatedBytes = indexedFileQuotaAllocator.allocateQuota(
+                        indexedFileEntity, countOfReadBytes, approximateFileSize, shouldEnforceUserAndTeamQuota);
             }
         }
         //If value is negative, that indicates EOF, so we don't proceed allocation

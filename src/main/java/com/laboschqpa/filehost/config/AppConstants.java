@@ -9,4 +9,7 @@ public class AppConstants {
     public static final String healthControllerUrl = "/health";
     public static final String healthPingSubUrl = "/ping";
     public static final String healthPingUrlAntPattern = healthControllerUrl + healthPingSubUrl;
+
+    public static final String internalNoAuthBaseUrl = "/api/internal/noAuth";
+    public static final String internalNoAuthBaseUrlAntPattern = "/api/internal/noAuth/**";
 }
