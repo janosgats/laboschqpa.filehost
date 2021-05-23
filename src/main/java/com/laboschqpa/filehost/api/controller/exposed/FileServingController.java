@@ -14,6 +14,7 @@ import com.laboschqpa.filehost.service.fileservingauth.AuthorizeRequestResult;
 import com.laboschqpa.filehost.service.fileservingauth.FileServingUserAuthorizerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,9 +33,12 @@ public class FileServingController {
 
     @GetMapping("/get/**")
     public ResponseEntity<Resource> getDownload(@RequestParam("id") Long fileId,
-                                                @RequestParam(value = "forceOriginal", required = false) Boolean forceOriginal,
-                                                @RequestParam(value = "wantedImageSize", required = false) Integer wantedImageSize,
+                                                @RequestParam(value = "forceOriginal", required = false) String forceOriginalString,
+                                                @RequestParam(value = "wantedImageSize", required = false) String wantedImageSizeString,
                                                 HttpServletRequest httpServletRequest) {
+        final Boolean forceOriginal = extractBooleanFromString(forceOriginalString);
+        final Integer wantedImageSize = extractIntegerFromString(wantedImageSizeString);
+
         fileServingUserAuthorizerService.authorizeRequestOrThrow(fileId, FileAccessType.READ, httpServletRequest);
 
         if (forceOriginal != null && forceOriginal) {
@@ -69,5 +73,37 @@ public class FileServingController {
                 forcedFileType);
 
         return fileUploaderService.uploadFile(fileUploadRequest, httpServletRequest);
+    }
+
+    private Boolean extractBooleanFromString(String str) {
+        if (str == null) {
+            return null;
+        }
+        final String trimmed = str.trim();
+
+        if ("1".equals(trimmed) || "true".equals(trimmed)) {
+            return true;
+        }
+        if ("0".equals(trimmed) || "false".equals(trimmed)) {
+            return false;
+        }
+        return null;
+    }
+
+    private Integer extractIntegerFromString(String str) {
+        if (str == null) {
+            return null;
+        }
+        final String trimmed = str.trim();
+
+        if (!StringUtils.isNumeric(trimmed)) {
+            return null;
+        }
+
+        try {
+            return Integer.parseInt(trimmed);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

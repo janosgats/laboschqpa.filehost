@@ -23,7 +23,7 @@ import java.time.Instant;
 
 @Log4j2
 public class S3File extends AbstractIndexedFile<S3FileEntity> implements UploadableFile, HttpServableFile, DeletableFile {
-    private static final long PRESIGNED_URL_EXPIRATION_SECONDS = 60;
+    private static final long PRESIGNED_URL_EXPIRATION_SECONDS = 90;
     private static final long PRESIGNED_URL_REFRESH_THRESHOLD_SECONDS = 10;
 
     private final S3FileEntityRepository s3FileEntityRepository;
