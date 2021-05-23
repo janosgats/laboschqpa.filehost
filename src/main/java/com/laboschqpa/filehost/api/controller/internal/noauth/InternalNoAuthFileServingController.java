@@ -29,6 +29,6 @@ public class InternalNoAuthFileServingController {
     }
 
     private ResponseEntity<Resource> downloadOriginal(Long fileId, HttpServletRequest httpServletRequest) {
-        return fileDownloaderService.downloadFile(fileId, httpServletRequest);
+        return fileDownloaderService.downloadOriginalFile(fileId, httpServletRequest);
     }
 }

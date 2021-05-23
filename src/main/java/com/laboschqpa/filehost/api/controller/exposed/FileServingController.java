@@ -8,6 +8,7 @@ import com.laboschqpa.filehost.entity.IndexedFileEntity;
 import com.laboschqpa.filehost.enums.FileAccessType;
 import com.laboschqpa.filehost.enums.UploadKind;
 import com.laboschqpa.filehost.enums.UploadedFileType;
+import com.laboschqpa.filehost.model.download.FileDownloadRequest;
 import com.laboschqpa.filehost.model.upload.FileUploadRequest;
 import com.laboschqpa.filehost.service.fileservingauth.AuthorizeRequestResult;
 import com.laboschqpa.filehost.service.fileservingauth.FileServingUserAuthorizerService;
@@ -29,11 +30,19 @@ public class FileServingController {
     private final FileDownloaderService fileDownloaderService;
     private final FileUploaderService fileUploaderService;
 
-    @GetMapping("/**")
-    public ResponseEntity<Resource> getDownload(@RequestParam("id") Long fileId, HttpServletRequest httpServletRequest) {
+    @GetMapping("/get/**")
+    public ResponseEntity<Resource> getDownload(@RequestParam("id") Long fileId,
+                                                @RequestParam(value = "forceOriginal", required = false) Boolean forceOriginal,
+                                                @RequestParam(value = "wantedImageSize", required = false) Integer wantedImageSize,
+                                                HttpServletRequest httpServletRequest) {
         fileServingUserAuthorizerService.authorizeRequestOrThrow(fileId, FileAccessType.READ, httpServletRequest);
 
-        return fileDownloaderService.downloadFile(fileId, httpServletRequest);
+        if (forceOriginal != null && forceOriginal) {
+            return fileDownloaderService.downloadOriginalFile(fileId, httpServletRequest);
+        }
+
+        final FileDownloadRequest downloadRequest = new FileDownloadRequest(fileId, wantedImageSize);
+        return fileDownloaderService.downloadOptimalFile(downloadRequest, httpServletRequest);
     }
 
     @PostMapping("/any/**")

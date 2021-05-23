@@ -17,8 +17,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
-import java.util.Optional;
-
 @RequiredArgsConstructor
 @Service
 public class HttpServableFileFactory {
@@ -27,6 +25,22 @@ public class HttpServableFileFactory {
     private final TrackingInputStreamFactory trackingInputStreamFactory;
     private final S3Presigner s3Presigner;
     private final S3FileEntityRepository s3FileEntityRepository;
+
+    public HttpServableFile from(Long indexedFileId) {
+        IndexedFileEntity indexedFileEntity = indexedFileEntityRepository.findById(indexedFileId)
+                .orElseThrow(() -> new ContentNotFoundException("Cannot find indexed file with id: " + indexedFileId));
+
+        return fromIndexedFileEntity(indexedFileEntity);
+    }
+
+    public HttpServableFile fromIndexedFileEntity(IndexedFileEntity indexedFileEntity) {
+        if (indexedFileEntity instanceof LocalDiskFileEntity)
+            return from((LocalDiskFileEntity) indexedFileEntity);
+        if (indexedFileEntity instanceof S3FileEntity)
+            return from((S3FileEntity) indexedFileEntity);
+
+        throw new InvalidHttpRequestException("Cannot create HttpServableFile from indexedFileEntity. id: " + indexedFileEntity.getId());
+    }
 
     public LocalDiskFile from(LocalDiskFileEntity localDiskFileEntity) {
         return new LocalDiskFile(localDiskFileUtils, localDiskFileEntity, null, trackingInputStreamFactory);
@@ -37,21 +51,5 @@ public class HttpServableFileFactory {
             throw new UnsupportedOperationException("S3 provider not supported yet: " + s3FileEntity.getS3Provider());
         }
         return new S3File(s3FileEntity, null, null, s3Presigner, s3FileEntityRepository);
-    }
-
-    public HttpServableFile from(Long indexedFileId) {
-        Optional<IndexedFileEntity> indexedFileOptional = indexedFileEntityRepository.findById(indexedFileId);
-
-        if (indexedFileOptional.isEmpty())
-            throw new ContentNotFoundException("Cannot find indexed file with id: " + indexedFileId);
-
-        IndexedFileEntity indexedFileEntity = indexedFileOptional.get();
-
-        if (indexedFileEntity instanceof LocalDiskFileEntity)
-            return from((LocalDiskFileEntity) indexedFileEntity);
-        if (indexedFileEntity instanceof S3FileEntity)
-            return from((S3FileEntity) indexedFileEntity);
-
-        throw new InvalidHttpRequestException("Cannot create DownloadableFile from indexedFileId: " + indexedFileId);
     }
 }
