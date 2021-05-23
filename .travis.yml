@@ -37,7 +37,7 @@ jobs:
         - docker push ${IMAGE_NAME_BRANCH}
 
     - stage: DeployToGKE
-      if: env(SKIP_DEPLOY_TO_GKE) != "true" AND (branch = master OR env(FORCE_DEPLOY_TO_GKE) = "true")
+      if: env(SKIP_DEPLOY_TO_GKE) != "true" AND ((branch = master AND NOT type = pull_request) OR env(FORCE_DEPLOY_TO_GKE) = "true")
       script: skip
       before_install:
         - echo ${GKE_SERVICE_ACCOUNT_BASE64} | base64 --decode > gke-service-account.json
