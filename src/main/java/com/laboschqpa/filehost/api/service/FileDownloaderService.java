@@ -27,7 +27,7 @@ import java.util.List;
 @Service
 @ExceptionWrappedFileServingClass
 public class FileDownloaderService {
-    private static final int DEFAULT_OPTIMIZED_IMAGE_SIZE = 800;
+    private static final int DEFAULT_OPTIMIZED_IMAGE_SIZE = 500;
 
     private final HttpServableFileFactory httpServableFileFactory;
     private final IndexedFileEntityRepository indexedFileEntityRepository;

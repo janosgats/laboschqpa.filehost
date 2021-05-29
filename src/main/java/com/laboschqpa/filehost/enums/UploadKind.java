@@ -26,7 +26,7 @@ public enum UploadKind {
     }
 
     public static UploadKind fromValue(Integer value) {
-        Optional<UploadKind> optional = Arrays.stream(UploadKind.values())
+        Optional<UploadKind> optional = Arrays.stream(values())
                 .filter(en -> en.getValue().equals(value))
                 .findFirst();
 

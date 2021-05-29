@@ -22,7 +22,7 @@ public enum QuotaSubjectCategory {
     }
 
     public static QuotaSubjectCategory fromValue(Integer value) {
-        Optional<QuotaSubjectCategory> optional = Arrays.stream(QuotaSubjectCategory.values())
+        Optional<QuotaSubjectCategory> optional = Arrays.stream(values())
                 .filter(en -> en.getValue().equals(value))
                 .findFirst();
 

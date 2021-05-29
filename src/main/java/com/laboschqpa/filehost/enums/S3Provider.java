@@ -30,7 +30,7 @@ public enum S3Provider {
     }
 
     public static S3Provider fromValue(Integer value) {
-        Optional<S3Provider> optional = Arrays.stream(S3Provider.values())
+        Optional<S3Provider> optional = Arrays.stream(values())
                 .filter(en -> en.getValue().equals(value))
                 .findFirst();
 

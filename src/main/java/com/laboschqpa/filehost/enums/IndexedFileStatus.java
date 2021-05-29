@@ -31,7 +31,7 @@ public enum IndexedFileStatus {
     }
 
     public static IndexedFileStatus fromValue(Integer value) {
-        Optional<IndexedFileStatus> optional = Arrays.stream(IndexedFileStatus.values())
+        Optional<IndexedFileStatus> optional = Arrays.stream(values())
                 .filter(en -> en.getValue().equals(value))
                 .findFirst();
 

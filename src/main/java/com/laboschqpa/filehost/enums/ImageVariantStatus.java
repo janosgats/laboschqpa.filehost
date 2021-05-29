@@ -28,7 +28,7 @@ public enum ImageVariantStatus {
     }
 
     public static ImageVariantStatus fromValue(int value) {
-        Optional<ImageVariantStatus> optional = Arrays.stream(ImageVariantStatus.values())
+        Optional<ImageVariantStatus> optional = Arrays.stream(values())
                 .filter(en -> en.getValue().equals(value))
                 .findFirst();
 

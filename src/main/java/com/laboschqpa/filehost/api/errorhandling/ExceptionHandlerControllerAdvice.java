@@ -1,8 +1,9 @@
 package com.laboschqpa.filehost.api.errorhandling;
 
 import com.laboschqpa.filehost.exceptions.ConflictingRequestDataApiException;
-import com.laboschqpa.filehost.exceptions.apierrordescriptor.ApiErrorDescriptorException;
+import com.laboschqpa.filehost.exceptions.FileServingRateLimitHitException;
 import com.laboschqpa.filehost.exceptions.UnAuthorizedException;
+import com.laboschqpa.filehost.exceptions.apierrordescriptor.ApiErrorDescriptorException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -30,6 +31,12 @@ public class ExceptionHandlerControllerAdvice extends ResponseEntityExceptionHan
             ApiErrorDescriptorException e, WebRequest request) {
         loggerOfChild.trace("handleApiErrorDescriptorException() caught exception while executing api request!", e);
         return new ResponseEntity<>(new ApiErrorResponseBody(e.getApiErrorDescriptor(), e.getMessage()), HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(FileServingRateLimitHitException.class)
+    protected ResponseEntity<String> handleFileServingRateLimitHit(
+            Exception e, WebRequest request) {
+        return new ResponseEntity<>("File serving rate limit hit", HttpStatus.TOO_MANY_REQUESTS);
     }
 
     @ExceptionHandler(ConflictingRequestDataApiException.class)

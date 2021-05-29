@@ -6,15 +6,14 @@ import com.laboschqpa.filehost.exceptions.NotImplementedException;
 import java.util.Arrays;
 import java.util.Optional;
 
-public enum FileAccessType {
-    READ(0),
-    DELETE(1),
-    CREATE_NEW(2),
-    EDIT(3);
+public enum FileServingEventKind {
+    SERVING_RESPONSE_CREATED_SUCCESSFULLY(1),
+    ERROR_WHILE_CREATING_SERVING_RESPONSE(2),
+    DENIED_BECAUSE_OF_RATE_LIMIT(3);
 
     private Integer value;
 
-    FileAccessType(Integer value) {
+    FileServingEventKind(Integer value) {
         this.value = value;
     }
 
@@ -23,8 +22,8 @@ public enum FileAccessType {
         return value;
     }
 
-    public static FileAccessType fromValue(Integer value) {
-        Optional<FileAccessType> optional = Arrays.stream(values())
+    public static FileServingEventKind fromValue(Integer value) {
+        Optional<FileServingEventKind> optional = Arrays.stream(values())
                 .filter(en -> en.getValue().equals(value))
                 .findFirst();
 
