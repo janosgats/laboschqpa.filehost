@@ -9,39 +9,25 @@
             <AppenderRef ref="LocaldevConsoleAppender"/>
         </Async>
 
-<!--        <AwsCloudWatchConsoleAppender name="AwsCloudWatchConsoleAppender">-->
-<!--        </AwsCloudWatchConsoleAppender>-->
-<!--        <Async name="AsyncAwsCloudWatchConsoleAppender" bufferSize="16384">-->
-<!--            <AppenderRef ref="AwsCloudWatchConsoleAppender"/>-->
-<!--        </Async>-->
-
-<!--        <SplunkFileAppender name="SplunkFileAppender">-->
-<!--        </SplunkFileAppender>-->
-<!--        <Async name="AsyncSplunkFileAppender" bufferSize="16384">-->
-<!--            <AppenderRef ref="SplunkFileAppender"/>-->
-<!--        </Async>-->
+        <GoogleCloudConsoleAppender name="GoogleCloudConsoleAppender">
+        </GoogleCloudConsoleAppender>
+        <Async name="AsyncGoogleCloudConsoleAppender" bufferSize="16384">
+            <AppenderRef ref="GoogleCloudConsoleAppender"/>
+        </Async>
 
     </Appenders>
     <Loggers>
-        <Logger name="org.hibernate.SQL" level="info" additivity="false">
-            <AppenderRef ref="AsyncLocaldevConsoleAppender"/>
-        </Logger>
-        <Logger name="org.springframework.security.web.FilterChainProxy" level="info" additivity="false">
-            <AppenderRef ref="AsyncLocaldevConsoleAppender"/>
-        </Logger>
-        <Logger name="org.springframework.security.web" level="info" additivity="false">
-            <AppenderRef ref="AsyncLocaldevConsoleAppender"/>
-        </Logger>
         <Logger name="com.laboschqpa.filehost.config.filter.ApiInternalAuthInterServiceFilter" level="debug" additivity="false">
             <AppenderRef ref="AsyncLocaldevConsoleAppender"/>
+            <AppenderRef ref="AsyncGoogleCloudConsoleAppender"/>
         </Logger>
         <Logger name="com.laboschqpa.filehost" level="all" additivity="false">
             <AppenderRef ref="AsyncLocaldevConsoleAppender"/>
+            <AppenderRef ref="AsyncGoogleCloudConsoleAppender"/>
         </Logger>
         <Root level="info">
             <AppenderRef ref="AsyncLocaldevConsoleAppender"/>
-<!--            <AppenderRef ref="AsyncAwsCloudWatchConsoleAppender"/>-->
-<!--            <AppenderRef ref="AsyncSplunkFileAppender"/>-->
+            <AppenderRef ref="AsyncGoogleCloudConsoleAppender"/>
         </Root>
     </Loggers>
 </Configuration>

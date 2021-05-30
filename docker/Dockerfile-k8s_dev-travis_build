@@ -24,7 +24,8 @@ RUN apt-get update && \
 ###### End of: Adding APR Support <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 ENV APP_HOME=/home/spring-user/app
-ENV LOGGING_ENABLE_LOCALDEV_CONSOLE_APPENDER=true
+ENV LOGGING_ENABLE_LOCALDEV_CONSOLE_APPENDER=false
+ENV LOGGING_ENABLE_GOOGLE_CLOUD_CONSOLE_APPENDER=true
 
 RUN groupadd -g 10002 spring-user && \
     useradd -m -u 10002 -g spring-user spring-user
