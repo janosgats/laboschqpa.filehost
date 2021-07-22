@@ -1,6 +1,6 @@
 #!groovy
 
-String GKE_PROJECT_NAME = 'ringed-bebop-312422'
+String GKE_PROJECT_NAME = 'qpa-web-2'
 String GKE_CLUSTER_NAME = 'laboschqpa-2'
 String GKE_COMPUTE_ZONE = 'europe-central2-a'
 
