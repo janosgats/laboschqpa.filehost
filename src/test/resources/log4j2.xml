@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- LoggerConfig -->
+<Configuration name="com.laboschqpa.filehost" packages="com.laboschqpa.filehost.logging">
+    <Appenders>
+
+        <CustomLocaldevConsoleAppender name="LocaldevConsoleAppender">
+        </CustomLocaldevConsoleAppender>
+        <Async name="AsyncLocaldevConsoleAppender" bufferSize="16384">
+            <AppenderRef ref="LocaldevConsoleAppender"/>
+        </Async>
+
+    </Appenders>
+    <Loggers>
+        <Logger name="com.laboschqpa.filehost.config.filter.ApiInternalAuthInterServiceFilter" level="debug" additivity="false">
+            <AppenderRef ref="AsyncLocaldevConsoleAppender"/>
+        </Logger>
+        <Logger name="com.laboschqpa.filehost" level="all" additivity="false">
+            <AppenderRef ref="AsyncLocaldevConsoleAppender"/>
+        </Logger>
+        <Root level="info">
+            <AppenderRef ref="AsyncLocaldevConsoleAppender"/>
+        </Root>
+    </Loggers>
+</Configuration>

@@ -3,9 +3,7 @@ package com.laboschqpa.filehost.logging;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.janosgats.logging.flexibleappender.FlexibleAppender;
-import com.janosgats.logging.flexibleappender.enableable.CompositeOrEnableable;
-import com.janosgats.logging.flexibleappender.enableable.EnvironmentVariableEnableable;
-import com.janosgats.logging.flexibleappender.enableable.SystemPropertyEnableable;
+import com.janosgats.logging.flexibleappender.enableable.AlwaysOnEnableable;
 import com.janosgats.logging.flexibleappender.helper.LoggingHelper;
 import com.janosgats.logging.flexibleappender.loglinebuilder.AbstractLogLineBuilder;
 import com.janosgats.logging.flexibleappender.loglinebuilder.DateTimeFormatterLogLineBuilder;
@@ -25,27 +23,23 @@ import java.io.Serializable;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
-@Plugin(name = "GoogleCloudConsoleAppender", category = "Core", elementType = "appender", printObject = true)
-public class GoogleCloudConsoleAppender extends FlexibleAppender {
+@Plugin(name = "CustomGoogleCloudConsoleAppender", category = "Core", elementType = "appender", printObject = true)
+public class CustomGoogleCloudConsoleAppender extends FlexibleAppender {
 
-    private GoogleCloudConsoleAppender(String name, Filter filter, Layout<? extends Serializable> layout, boolean ignoreExceptions, Property[] properties) {
+    private CustomGoogleCloudConsoleAppender(String name, Filter filter, Layout<? extends Serializable> layout, boolean ignoreExceptions, Property[] properties) {
         super(name, filter, layout, ignoreExceptions, properties);
 
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneOffset.UTC);
-
-        CompositeOrEnableable compositeOrEnableable = new CompositeOrEnableable();
-        compositeOrEnableable.getAbstractEnableables().add(new EnvironmentVariableEnableable("LOGGING_ENABLE_GOOGLE_CLOUD_CONSOLE_APPENDER"));
-        compositeOrEnableable.getAbstractEnableables().add(new SystemPropertyEnableable("LOGGING_ENABLE_GOOGLE_CLOUD_CONSOLE_APPENDER"));
 
         AbstractLogLineBuilder logLineBuilder = new LogLineBuilder(dateTimeFormatter);
 
         AbstractLogLineOutput logLineOutput = new StdOutLogLineOutput();
 
-        super.setUpAppender(compositeOrEnableable, logLineBuilder, logLineOutput);
+        super.setUpAppender(new AlwaysOnEnableable(), logLineBuilder, logLineOutput);
     }
 
     @PluginFactory
-    public static GoogleCloudConsoleAppender createAppender(
+    public static CustomGoogleCloudConsoleAppender createAppender(
             @PluginAttribute("name") String name,
             @PluginElement("Layout") Layout<? extends Serializable> layout,
             @PluginElement("Filter") final Filter filter,
@@ -57,7 +51,7 @@ public class GoogleCloudConsoleAppender extends FlexibleAppender {
         if (layout == null) {
             layout = PatternLayout.createDefaultLayout();//A layout has to be provided to instantiate the appender
         }
-        return new GoogleCloudConsoleAppender(name, filter, layout, false, new Property[0]);
+        return new CustomGoogleCloudConsoleAppender(name, filter, layout, false, new Property[0]);
     }
 
     private static class LogLineBuilder extends DateTimeFormatterLogLineBuilder {

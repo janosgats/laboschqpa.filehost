@@ -1,10 +1,7 @@
 package com.laboschqpa.filehost.logging;
 
 import com.janosgats.logging.flexibleappender.FlexibleAppender;
-import com.janosgats.logging.flexibleappender.enableable.CompositeOrEnableable;
-import com.janosgats.logging.flexibleappender.enableable.EnvironmentVariableEnableable;
-import com.janosgats.logging.flexibleappender.enableable.JUnitEnableable;
-import com.janosgats.logging.flexibleappender.enableable.SystemPropertyEnableable;
+import com.janosgats.logging.flexibleappender.enableable.*;
 import com.janosgats.logging.flexibleappender.loglinebuilder.AbstractLogLineBuilder;
 import com.janosgats.logging.flexibleappender.loglinebuilder.specific.LocaldevConsoleLogLineBuilder;
 import com.janosgats.logging.flexibleappender.loglineoutput.AbstractLogLineOutput;
@@ -22,28 +19,23 @@ import java.io.Serializable;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
-@Plugin(name = "LocaldevConsoleAppender", category = "Core", elementType = "appender", printObject = true)
-public class LocaldevConsoleAppender extends FlexibleAppender {
+@Plugin(name = "CustomLocaldevConsoleAppender", category = "Core", elementType = "appender", printObject = true)
+public class CustomLocaldevConsoleAppender extends FlexibleAppender {
 
-    private LocaldevConsoleAppender(String name, Filter filter, Layout<? extends Serializable> layout, boolean ignoreExceptions, Property[] properties) {
+    private CustomLocaldevConsoleAppender(String name, Filter filter, Layout<? extends Serializable> layout, boolean ignoreExceptions, Property[] properties) {
         super(name, filter, layout, ignoreExceptions, properties);
 
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd HH:mm:ss.SSS").withZone(ZoneId.systemDefault());
-
-        CompositeOrEnableable compositeOrEnableable = new CompositeOrEnableable();
-        compositeOrEnableable.getAbstractEnableables().add(new EnvironmentVariableEnableable("LOGGING_ENABLE_LOCALDEV_CONSOLE_APPENDER"));
-        compositeOrEnableable.getAbstractEnableables().add(new SystemPropertyEnableable("LOGGING_ENABLE_LOCALDEV_CONSOLE_APPENDER"));
-        compositeOrEnableable.getAbstractEnableables().add(new JUnitEnableable());
 
         AbstractLogLineBuilder logLineBuilder = new LocaldevConsoleLogLineBuilder(dateTimeFormatter, 2);
 
         AbstractLogLineOutput logLineOutput = new StdOutLogLineOutput();
 
-        super.setUpAppender(compositeOrEnableable, logLineBuilder, logLineOutput);
+        super.setUpAppender(new AlwaysOnEnableable(), logLineBuilder, logLineOutput);
     }
 
     @PluginFactory
-    public static LocaldevConsoleAppender createAppender(
+    public static CustomLocaldevConsoleAppender createAppender(
         @PluginAttribute("name") String name,
         @PluginElement("Layout") Layout<? extends Serializable> layout,
         @PluginElement("Filter") final Filter filter,
@@ -55,6 +47,6 @@ public class LocaldevConsoleAppender extends FlexibleAppender {
         if (layout == null) {
             layout = PatternLayout.createDefaultLayout();//A layout has to be provided to instantiate the appender
         }
-        return new LocaldevConsoleAppender(name, filter, layout, false, new Property[0]);
+        return new CustomLocaldevConsoleAppender(name, filter, layout, false, new Property[0]);
     }
 }

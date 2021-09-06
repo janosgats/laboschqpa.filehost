@@ -3,31 +3,22 @@
 <Configuration name="com.laboschqpa.filehost" packages="com.laboschqpa.filehost.logging">
     <Appenders>
 
-        <LocaldevConsoleAppender name="LocaldevConsoleAppender">
-        </LocaldevConsoleAppender>
+        <CustomLocaldevConsoleAppender name="LocaldevConsoleAppender">
+        </CustomLocaldevConsoleAppender>
         <Async name="AsyncLocaldevConsoleAppender" bufferSize="16384">
             <AppenderRef ref="LocaldevConsoleAppender"/>
-        </Async>
-
-        <GoogleCloudConsoleAppender name="GoogleCloudConsoleAppender">
-        </GoogleCloudConsoleAppender>
-        <Async name="AsyncGoogleCloudConsoleAppender" bufferSize="16384">
-            <AppenderRef ref="GoogleCloudConsoleAppender"/>
         </Async>
 
     </Appenders>
     <Loggers>
         <Logger name="com.laboschqpa.filehost.config.filter.ApiInternalAuthInterServiceFilter" level="debug" additivity="false">
             <AppenderRef ref="AsyncLocaldevConsoleAppender"/>
-            <AppenderRef ref="AsyncGoogleCloudConsoleAppender"/>
         </Logger>
         <Logger name="com.laboschqpa.filehost" level="all" additivity="false">
             <AppenderRef ref="AsyncLocaldevConsoleAppender"/>
-            <AppenderRef ref="AsyncGoogleCloudConsoleAppender"/>
         </Logger>
         <Root level="info">
             <AppenderRef ref="AsyncLocaldevConsoleAppender"/>
-            <AppenderRef ref="AsyncGoogleCloudConsoleAppender"/>
         </Root>
     </Loggers>
 </Configuration>

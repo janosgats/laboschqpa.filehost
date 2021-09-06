@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- LoggerConfig -->
+<Configuration name="com.laboschqpa.filehost" packages="com.laboschqpa.filehost.logging">
+    <Appenders>
+
+        <CustomGoogleCloudConsoleAppender name="GoogleCloudConsoleAppender">
+        </CustomGoogleCloudConsoleAppender>
+        <Async name="AsyncGoogleCloudConsoleAppender" bufferSize="16384">
+            <AppenderRef ref="GoogleCloudConsoleAppender"/>
+        </Async>
+
+    </Appenders>
+    <Loggers>
+        <Logger name="com.laboschqpa.filehost.config.filter.ApiInternalAuthInterServiceFilter" level="debug" additivity="false">
+            <AppenderRef ref="AsyncGoogleCloudConsoleAppender"/>
+        </Logger>
+        <Logger name="com.laboschqpa.filehost" level="all" additivity="false">
+            <AppenderRef ref="AsyncGoogleCloudConsoleAppender"/>
+        </Logger>
+        <Root level="info">
+            <AppenderRef ref="AsyncGoogleCloudConsoleAppender"/>
+        </Root>
+    </Loggers>
+</Configuration>
