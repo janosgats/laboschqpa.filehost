@@ -24,6 +24,27 @@ public class VariantService {
     private final ImageVariantRepository imageVariantRepository;
 
 
+    public void markVariantAsCorrupt(long variantFileId) {
+        final ImageVariant imageVariant = imageVariantRepository.findByVariantFileId(variantFileId)
+                .orElseThrow(() -> new ContentNotFoundException("Cannot find ImageVariant by variantFileId: " + variantFileId));
+
+        markVariantAsCorrupt(imageVariant);
+    }
+
+    public void markVariantAsCorrupt(long originalFileId, int variantSize) {
+        final ImageVariant imageVariant = imageVariantRepository.findAllByOriginalFileIdAndVariantSize(originalFileId, variantSize)
+                .orElseThrow(() -> new ContentNotFoundException("Cannot find ImageVariant by originalFileId and variantSize: " + originalFileId + ":" + variantSize));
+
+        markVariantAsCorrupt(imageVariant);
+    }
+
+    public void markVariantAsCorrupt(ImageVariant imageVariant) {
+        imageVariant.setStatus(ImageVariantStatus.EXISTS_CORRUPTED);
+        imageVariant.setStatusUpdated(Instant.now());
+
+        imageVariantRepository.save(imageVariant);
+    }
+
     public void signalJobFailedInJobProcessor(long jobId) {
         log.info("Received signal of ImageVariant job failed in job processor. jobId: {}", jobId);
         meterRegistry.counter(SIGNALED_IMAGE_VARIANT_JOB_FAILED_IN_JOB_PROCESSOR_COUNT).increment();

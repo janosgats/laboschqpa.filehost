@@ -14,7 +14,11 @@ public enum ImageVariantStatus {
     SUCCEEDED(5),
     FAILED_DURING_QUEUEING(6),
     FAILED_DURING_UPLOAD(7),
-    FAILED_IN_JOB_PROCESSOR(8);
+    FAILED_IN_JOB_PROCESSOR(8),
+    /**
+     * The image was transcoded and the variant exists but the image is corrupt.
+     */
+    EXISTS_CORRUPTED(9);
 
     private Integer value;
 

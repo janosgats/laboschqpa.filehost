@@ -14,6 +14,8 @@ import java.util.Optional;
 
 public interface ImageVariantRepository extends JpaRepository<ImageVariant, Long> {
 
+    Optional<ImageVariant> findByVariantFileId(@Param("variantFileId") long variantFileId);
+
     @Query("select v.jobId from ImageVariant v " +
             " where " +
             "       v.trialsCount < :maxTrialsOnAJob " +
@@ -51,4 +53,6 @@ public interface ImageVariantRepository extends JpaRepository<ImageVariant, Long
     List<ImageVariant> findAllByOriginalFileId(long originalFileId);
 
     List<ImageVariant> findAllByOriginalFileIdAndStatus(long originalFileId, ImageVariantStatus status);
+
+    Optional<ImageVariant> findAllByOriginalFileIdAndVariantSize(long originalFileId, int variantSize);
 }

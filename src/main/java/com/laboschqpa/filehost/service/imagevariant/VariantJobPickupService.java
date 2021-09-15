@@ -31,7 +31,10 @@ public class VariantJobPickupService {
     private static final int PICK_UP_UNFINISHED_JOBS_TIMEOUT_SECONDS = 30 * 60;
 
     private static final int MAX_TRIALS_ON_A_JOB = 25;
-    private static final List<ImageVariantStatus> STATUSES_FOR_INSTANT_PICKUP = List.of(ImageVariantStatus.WAITING_FOR_FIRST_PICKUP);
+    private static final List<ImageVariantStatus> STATUSES_FOR_INSTANT_PICKUP = List.of(
+            ImageVariantStatus.WAITING_FOR_FIRST_PICKUP,
+            ImageVariantStatus.EXISTS_CORRUPTED
+    );
     private static final List<ImageVariantStatus> FAILED_STATUSES = List.of(
             ImageVariantStatus.FAILED_DURING_QUEUEING,
             ImageVariantStatus.FAILED_DURING_UPLOAD,

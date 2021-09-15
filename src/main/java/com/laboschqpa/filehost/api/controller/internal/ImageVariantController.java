@@ -39,4 +39,14 @@ public class ImageVariantController {
     public void postSignalFailedJobInJobProcessor(@RequestParam("jobId") Long jobId) {
         variantService.signalJobFailedInJobProcessor(jobId);
     }
+
+    @PostMapping("/markVariantFileAsCorrupt")
+    public void postMarkVariantFileAsCorrupt(@RequestParam("variantFileId") Long variantFileId) {
+        variantService.markVariantAsCorrupt(variantFileId);
+    }
+
+    @PostMapping("/markVariantAsCorrupt")
+    public void postMarkVariantAsCorrupt(@RequestParam("originalFileId") Long originalFileId, @RequestParam("variantSize") Integer variantSize) {
+        variantService.markVariantAsCorrupt(originalFileId, variantSize);
+    }
 }
