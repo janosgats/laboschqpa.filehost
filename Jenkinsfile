@@ -1,7 +1,7 @@
 #!groovy
 
-String GKE_PROJECT_NAME = 'qpa-web-2'
-String GKE_CLUSTER_NAME = 'laboschqpa-2'
+String GKE_PROJECT_NAME = 'qpa-web-3'
+String GKE_CLUSTER_NAME = 'laboschqpa'
 String GKE_COMPUTE_ZONE = 'europe-central2-a'
 
 String IMAGE_NAME = 'laboschqpa-filehost'
