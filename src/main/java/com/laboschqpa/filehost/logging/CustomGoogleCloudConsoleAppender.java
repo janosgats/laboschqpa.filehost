@@ -77,8 +77,11 @@ public class CustomGoogleCloudConsoleAppender extends FlexibleAppender {
             if (logEvent.getMarker() != null)
                 logNode.put("marker", logEvent.getMarker().getName());
 
-            if (logEvent.getThrown() != null)
-                logNode.put("thrown", LoggingHelper.getStackTraceAsString(logEvent.getThrown()));
+            if (logEvent.getThrown() != null) {
+                logNode.put("stackTrace", LoggingHelper.getStackTraceAsString(logEvent.getThrown()));
+                logNode.put("exception", logEvent.getThrown().getClass().getName());
+                logNode.put("errorMessage", logEvent.getThrown().getMessage());
+            }
 
             final ObjectNode contextNode = new ObjectNode(JsonNodeFactory.instance);
             logEvent.getContextData().forEach((key, val) -> {
