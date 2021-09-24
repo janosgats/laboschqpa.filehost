@@ -49,7 +49,7 @@ public class ExceptionHandlerControllerAdvice extends ResponseEntityExceptionHan
     @ExceptionHandler(UnAuthorizedException.class)
     protected ResponseEntity<ApiErrorResponseBody> handleUnAuthorized(
             Exception e, WebRequest request) {
-        loggerOfChild.error("UnAuthorizedException caught while executing api request!", e);
+        loggerOfChild.trace("UnAuthorizedException caught while executing api request!", e);
         return new ResponseEntity<>(new ApiErrorResponseBody(e.getMessage()), HttpStatus.FORBIDDEN);
     }
 
